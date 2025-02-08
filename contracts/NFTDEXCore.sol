@@ -9,14 +9,14 @@ import "./MarketLib.sol";
 
 /**
  * @title NFTDEXCore
- * @dev 此合約作為 NFT DEX 的核心，提供市場訂單功能以及雙池和 FLP 機制。
- *      雙池機制保證 NFT 的最低價格，並根據 NFT 的稀有度與權重來決定額外溢價。
- *      FLP 機制用於在交易過程中鑄造 FLP 代幣並更新池子狀態。
+ * @dev Core contract for the NFT DEX that provides market order functionalities as well as dual-pool and FLP mechanisms.
+ *      The dual-pool mechanism ensures a minimum price for NFTs by considering their rarity and weight, while the FLP mechanism
+ *      mints FLP tokens during trading and updates pool states.
  */
 contract NFTDEXCore is NFTDEXInterface, Ownable {
 
     // --------------------------
-    // 市場訂單部分
+    // Market Order Section
     // --------------------------
 
     struct Listing {
@@ -24,16 +24,16 @@ contract NFTDEXCore is NFTDEXInterface, Ownable {
         uint256 price;
     }
 
-    // 映射 tokenId 到訂單
+    // Mapping from tokenId to Listing
     mapping(uint256 => Listing) public listings;
 
-    // 事件 (市場訂單相關)
+    // Events for market orders
     event NFTListed(uint256 indexed tokenId, uint256 price);
     event NFTCanceled(uint256 indexed tokenId);
     event NFTBought(uint256 indexed tokenId, address indexed buyer, uint256 price);
 
     // --------------------------
-    // FLP 機制相關
+    // FLP Mechanism Section
     // --------------------------
 
     IFLPContract public flpContract;
@@ -41,7 +41,7 @@ contract NFTDEXCore is NFTDEXInterface, Ownable {
 
     MarketLib.MarketInfo public marketInfo;
 
-    // 新增平台費地址，用於接收平台收益（1%的費用）
+    // Platform fee address to receive platform revenue (1% fee)
     address public platformFeeAddress;
 
     function setPlatformFeeAddress(address _addr) external onlyOwner {
@@ -57,7 +57,7 @@ contract NFTDEXCore is NFTDEXInterface, Ownable {
         poolSystem = IPoolSystem(poolSystemAddress);
     }
 
-    // 內部函數: 鑄造 FLP 代幣，同時計算額外費用並更新池子 (額外費用 = (weight * 10) / 100)
+    // Internal function: Mints an FLP token, calculates the extra fee (extra fee = (weight * 10) / 100), and updates the pool
     function _mintFLP(address to, uint256 weight) internal returns (uint256) {
         uint256 flpTokenId = flpContract.totalSupply() + 1;
         flpContract.mint(to, flpTokenId, 0, 0, 0);
@@ -67,7 +67,7 @@ contract NFTDEXCore is NFTDEXInterface, Ownable {
     }
 
     // --------------------------
-    // 市場訂單功能的實現
+    // Market Order Functions
     // --------------------------
 
     function listNFT(uint256 tokenId, uint256 price) external override {
@@ -88,24 +88,24 @@ contract NFTDEXCore is NFTDEXInterface, Ownable {
         require(msg.value >= listing.price, "Insufficient payment");
         require(platformFeeAddress != address(0), "Platform fee address not set");
 
-        // 計算 3% 手續費
+        // Calculate a 3% fee
         uint256 fee = (listing.price * 3) / 100;
         uint256 sellerAmount = listing.price - fee;
-        uint256 platformFee = (listing.price * 1) / 100; // 1% 給平台
-        uint256 poolFee = (listing.price * 2) / 100;     // 2% 更新溢價池
+        uint256 platformFee = (listing.price * 1) / 100; // 1% for the platform
+        uint256 poolFee = (listing.price * 2) / 100;     // 2% to update the premium pool
 
-        // 將金額轉給賣家（扣除 3% 手續費）
+        // Transfer the net amount to the seller
         payable(listing.seller).transfer(sellerAmount);
-        // 將平台費轉給設定的平台費地址
+        // Transfer the platform fee
         payable(platformFeeAddress).transfer(platformFee);
 
-        // 新增：確認 poolSystem 為一個部署了程式碼的合約
+        // Ensure poolSystem is a deployed contract
         require(address(poolSystem).code.length > 0, "PoolSystem is not a contract");
 
-        // 更新池子，將 2% 手續費加入溢價池
+        // Update the pool: add 2% fee to the premium pool
         poolSystem.updatePools(poolFee, true);
 
-        // 如果有多餘的ETH，退回給買家
+        // Refund any excess ETH to the buyer
         uint256 refund = msg.value - listing.price;
         if (refund > 0) {
             payable(msg.sender).transfer(refund);
@@ -120,12 +120,12 @@ contract NFTDEXCore is NFTDEXInterface, Ownable {
         return (listing.seller, listing.price);
     }
 
-    // 使用 MarketLib 計算系統市場價格
+    // Uses MarketLib to calculate the system market price
     function calculateSystemPrice(uint256 basePrice, uint256 rarity) external view returns (uint256) {
         return MarketLib.getSystemPrice(basePrice, rarity, marketInfo.premiumPool);
     }
 
-    // 使用 MarketLib 處理系統市場手續費
+    // Uses MarketLib to handle the system fee
     function handleSystemFee(uint256 currentPrice, address platformWallet) external returns (uint256) {
         return MarketLib.handleSystemFee(currentPrice, marketInfo, platformWallet);
     }

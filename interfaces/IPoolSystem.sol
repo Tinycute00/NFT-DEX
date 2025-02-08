@@ -2,11 +2,11 @@
 pragma solidity ^0.8.9;
 
 interface IPoolSystem {
-    // Define function signatures as needed by SystemMarket
+    // Returns the current pool balance
     function getPoolBalance() external view returns (uint256);
 
-    // Added missing function updatePools to update the pool data
+    // Added: Updates the pools with the given amount and fee type
     function updatePools(uint256 amount, bool isSystemFee) external;
 
-    // 添加其他必要的函数签名...
+    // Add other necessary function signatures...
 } 

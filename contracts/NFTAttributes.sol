@@ -5,17 +5,17 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * @title BaseContract
- * @dev 基礎合約，包含通用功能和屬性
+ * @dev Base contract containing common functionality and attributes.
  */
 contract BaseContract {
-    // 通用屬性
+    // Common attribute: contract owner
     address public owner;
 
-    // 通用事件
+    // Event emitted when ownership is transferred
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     /**
-     * @dev 設置合約擁有者為部署者
+     * @dev Sets the deployer as the owner.
      */
     constructor() {
         owner = msg.sender;
@@ -23,7 +23,7 @@ contract BaseContract {
     }
 
     /**
-     * @dev 修飾符，限制只有擁有者可以調用
+     * @dev Modifier to restrict functions to the owner.
      */
     modifier onlyOwner() {
         require(owner == msg.sender, "Caller is not the owner");
@@ -31,7 +31,7 @@ contract BaseContract {
     }
 
     /**
-     * @dev 轉移合約擁有權
+     * @dev Transfers contract ownership.
      */
     function transferOwnership(address newOwner) public onlyOwner {
         require(newOwner != address(0), "New owner is the zero address");
@@ -42,30 +42,31 @@ contract BaseContract {
 
 /**
  * @title NFTAttributes
- * @dev 處理NFT屬性和稀有度計算的合約
+ * @dev Contract for handling NFT attributes and rarity calculation.
  */
 contract NFTAttributes is BaseContract {
-    // 常量
-    uint256 public constant MAX_ATTRIBUTES = 20;     // 增加最大屬性數量
-    uint256 public constant MAX_ATTRIBUTE_VALUE = 1000; // 增加最大屬性值
+    // Constants
+    uint256 public constant MAX_ATTRIBUTES = 20;     // Maximum number of attributes allowed
+    uint256 public constant MAX_ATTRIBUTE_VALUE = 1000; // Maximum attribute value allowed
     
-    // 屬性結構體
+    // Structure for NFT attributes
     struct Attributes {
-        uint256[] values;      // 屬性值數組
-        string[] names;        // 屬性名稱數組
-        uint256 count;         // 屬性數量
+        uint256[] values;      // Array of attribute values
+        string[] names;        // Array of attribute names
+        uint256 count;         // Number of attributes
     }
     
-    // 映射宣告，確保添加分號
+    // Mapping to store attribute distribution
     mapping(string => mapping(uint256 => uint256)) private attributeDistribution;
-    // NOTE: 当前 attributeDistribution 的逻辑尚未经过详细验证，并且其在稀有度计算中的影响可能存在不确定性。
-    // 建议在后续版本中明确属性加总、分布逻辑，或考虑将该逻辑进行解耦优化。
+    // NOTE: The current logic for attributeDistribution has not been fully validated,
+    // and its effect on rarity calculation might be uncertain.
+    // It is recommended to clarify or decouple the logic in future versions.
 
-    // Mapping to store attributes for each tokenId
+    // Mapping to store attributes for each NFT tokenId
     mapping(uint256 => Attributes) private attributesMap;
 
     /**
-     * @dev 設置 NFT 屬性，要求 attrNames 與 attrValues 長度一致
+     * @dev Sets NFT attributes. Requires that attrNames and attrValues arrays have equal lengths.
      */
     function setAttributes(uint256 tokenId, string[] memory attrNames, uint256[] memory attrValues) external {
         require(attrNames.length == attrValues.length, "Arrays length mismatch");
@@ -73,7 +74,7 @@ contract NFTAttributes is BaseContract {
     }
 
     /**
-     * @dev 獲取 NFT 屬性
+     * @dev Retrieves the NFT attributes.
      */
     function getAttributes(uint256 tokenId) external view returns (string[] memory, uint256[] memory) {
         Attributes storage attrs = attributesMap[tokenId];
@@ -81,14 +82,14 @@ contract NFTAttributes is BaseContract {
     }
 
     /**
-     * @dev 刪除 NFT 屬性
+     * @dev Deletes the NFT attributes.
      */
     function deleteAttributes(uint256 tokenId) external {
         delete attributesMap[tokenId];
     }
 
     /**
-     * @dev 計算 NFT 稀有度，這裡採用簡單的累加屬性值作為稀有度指標
+     * @dev Calculates NFT rarity by summing the attribute values.
      */
     function calculateRarity(uint256 tokenId) external view returns (uint256) {
         Attributes storage attrs = attributesMap[tokenId];

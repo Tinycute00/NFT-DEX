@@ -3,7 +3,7 @@ pragma solidity ^0.8.9;
 
 import "./interfaces/IFLPContract.sol";
 
-// 修改合约名称从 DummyFLP 修改为 MockFLP
+// Changed contract name from DummyFLP to MockFLP
 contract MockFLP is IFLPContract {
     uint256 private _totalSupply;
 
@@ -12,12 +12,12 @@ contract MockFLP is IFLPContract {
     }
 
     function mint(address /*to*/, uint256 flpTokenId, uint256 /*nftTokenId*/, uint256 /*rarity*/, uint256 /*weight*/) external override {
-        // 简单的模拟铸造方法，将 _totalSupply 更新为传入的 flpTokenId
+        // Simple simulation of minting: update _totalSupply with the provided flpTokenId
         _totalSupply = flpTokenId;
     }
 
     function burn(address /*from*/, uint256 tokenId) external override {
-        // 简单模拟销毁逻辑
+        // Simple simulation of burning logic
         if (_totalSupply == tokenId) {
             _totalSupply = tokenId - 1;
         }

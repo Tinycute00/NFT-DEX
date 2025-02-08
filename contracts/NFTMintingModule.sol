@@ -5,14 +5,15 @@ import "./CreatorNFT.sol";
 
 /**
  * @title NFTMintingModule
- * @dev 獨立鑄造合約，繼承自CreatorNFT，包含四個銷售階段(保證、先搶先贏、公售、其他)的鑄造入口
- * 此合約獨立部署後，可供項目方通過白名單設定後的地址進行鑄造，達到安全隔離效果，同時考慮到gas消耗的優化。
+ * @dev Independent minting contract inheriting from CreatorNFT. It includes minting entry points for four sale phases
+ *      (Guarantee, First-Come-First-Serve, Public Sale, and Others). Once deployed, project addresses with whitelist settings
+ *      can mint, achieving security isolation and gas optimization.
  */
 contract NFTMintingModule is CreatorNFT {
     constructor(address _nftAttributes, address _poolSystem, address _flpContract)
         CreatorNFT(_nftAttributes, _poolSystem, _flpContract) {}
 
-    // 保證階段 (phase == 1)
+    // Guarantee Phase (phase == 1)
     function mintGuarantee(uint256 rarity, string memory imageUrl) external payable override returns (uint256) {
         WhitelistEntry storage entry = whitelistEntries[msg.sender];
         require(entry.maxMint > 0, "Address not whitelisted");
@@ -40,7 +41,7 @@ contract NFTMintingModule is CreatorNFT {
         return newTokenId;
     }
 
-    // 先搶先贏階段 (phase == 2)
+    // First-Come-First-Serve Phase (phase == 2)
     function mintFirstComeFirstServe(uint256 rarity, string memory imageUrl) external payable override returns (uint256) {
         WhitelistEntry storage entry = whitelistEntries[msg.sender];
         require(entry.maxMint > 0, "Address not whitelisted");
@@ -67,7 +68,7 @@ contract NFTMintingModule is CreatorNFT {
         return newTokenId;
     }
 
-    // 公售階段 (phase == 3)
+    // Public Sale Phase (phase == 3)
     function mintPublicSale(uint256 rarity, string memory imageUrl) external payable override returns (uint256) {
         WhitelistEntry storage entry = whitelistEntries[msg.sender];
         require(entry.maxMint > 0, "Address not whitelisted");
@@ -94,7 +95,7 @@ contract NFTMintingModule is CreatorNFT {
         return newTokenId;
     }
 
-    // 其他階段 (phase == 4)
+    // Other Phase (phase == 4)
     function mintOther(uint256 rarity, string memory imageUrl) external payable override returns (uint256) {
         WhitelistEntry storage entry = whitelistEntries[msg.sender];
         require(entry.maxMint > 0, "Address not whitelisted");
@@ -121,7 +122,7 @@ contract NFTMintingModule is CreatorNFT {
         return newTokenId;
     }
 
-    // 批量保證階段鑄造 NFT，可讓白名單地址一次鑄造多個，受限於 whitelistEntries 中的 maxMint 設置
+    // Batch mint NFTs during the Guarantee phase; allows a whitelisted address to mint multiple NFTs at once, subject to the whitelist maxMint.
     function batchMintGuarantee(uint256[] memory rarities, string[] memory imageUrls) external payable returns (uint256[] memory) {
         require(rarities.length == imageUrls.length, "Arrays length mismatch");
         uint256 count = rarities.length;
@@ -130,7 +131,7 @@ contract NFTMintingModule is CreatorNFT {
         require(entry.phase == 1, "Not authorized for Guarantee phase");
         require(block.timestamp >= entry.mintStartTime && block.timestamp <= entry.mintEndTime, "Not in minting period");
         require(entry.minted + count <= entry.maxMint, "Mint limit exceeded");
-        require(msg.value == phasePrice[1] * count, "Incorrect ETH value for batch guarantee phase");
+        require(msg.value == phasePrice[1] * count, "Incorrect ETH value for batch Guarantee phase");
         
         uint256[] memory newTokenIds = new uint256[](count);
         for (uint256 i = 0; i < count; i++) {

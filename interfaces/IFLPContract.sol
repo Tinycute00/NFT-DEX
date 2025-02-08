@@ -2,12 +2,12 @@
 pragma solidity ^0.8.9;
 
 interface IFLPContract {
-    // 返回當前的總供應量
+    // Returns the current total supply
     function totalSupply() external view returns (uint256);
     
-    // 鑄造新的 FLP 代幣到指定地址
+    // Mints a new FLP token to the specified address
     function mint(address to, uint256 flpTokenId, uint256 nftTokenId, uint256 rarity, uint256 weight) external;
 
-    // 新增銷毀 FLP 代幣方法
+    // Added: Burns an FLP token
     function burn(address from, uint256 tokenId) external;
 } 

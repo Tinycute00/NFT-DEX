@@ -12,50 +12,50 @@ import "./interfaces/IFLPContract.sol";
 
 /**
  * @title CreatorNFT
- * @dev 用於創作者或項目創建NFT的合約
+ * @dev Contract for creators or projects to create NFTs.
  */
 contract CreatorNFT is Ownable, ReentrancyGuard, AccessControl {
-    // NFT類型
+    // Enum for NFT types
     enum NFTType { ERC721, ERC1155 }
 
-    // NFT信息結構體
+    // Structure to store NFT information
     struct NFTInfo {
         NFTType nftType;
         uint256 rarity;
         uint256 weight;
-        string imageUrl; // 圖片URL
+        string imageUrl; // Image URL
     }
 
-    // NFT屬性合約
+    // NFT attributes contract
     INFTAttributes public nftAttributes;
     IPoolSystem public poolSystem;
     IFLPContract public flpContract;
 
-    // NFT信息映射
+    // Mapping to store NFT information by tokenId
     mapping(uint256 => NFTInfo) public nftInfo;
 
     // -------------------------------
-    // 新增白名單結構
+    // Whitelist system structures
     // -------------------------------
     struct WhitelistEntry {
-        uint8 phase; // 白名單階段，例如 1: 保證, 2: 先搶先贏, 3: 公售, 4: 其他, 5: 其他
-        uint256 maxMint; // 該地址允許鑄造 NFT 的最大數量
-        uint256 minted;  // 該地址已鑄造數量
-        uint256 mintStartTime; // 鑄造開始時間（時間戳）
-        uint256 mintEndTime;   // 鑄造結束時間
+        uint8 phase; // Whitelist phase, e.g., 1: Guarantee, 2: First-Come-First-Serve, 3: Public Sale, 4: Others, 5: Others
+        uint256 maxMint; // Maximum number of NFTs that can be minted by this address
+        uint256 minted;  // Number of NFTs already minted by this address
+        uint256 mintStartTime; // Minting start time (timestamp)
+        uint256 mintEndTime;   // Minting end time
     }
 
-    // 白名單映射，記錄各地址的白名單設定
+    // Mapping to store whitelist entries for each address
     mapping(address => WhitelistEntry) public whitelistEntries;
 
-    // 事件
+    // Events
     event NFTCreated(uint256 indexed tokenId, NFTType nftType, uint256 rarity, uint256 weight, string imageUrl);
     event FLPMinted(address indexed to, uint256 indexed flpTokenId);
 
-    // 定義角色
+    // Define roles
     bytes32 public constant SECURITY_ROLE = keccak256("SECURITY_ROLE");
     
-    // 添加 tokenId 計數器，使用 internal 訪問權限
+    // Token ID counter, internal visibility
     uint256 internal _tokenIdCounter;
     
     constructor(address _nftAttributes, address _poolSystem, address _flpContract) {
@@ -63,15 +63,15 @@ contract CreatorNFT is Ownable, ReentrancyGuard, AccessControl {
         poolSystem = IPoolSystem(_poolSystem);
         flpContract = IFLPContract(_flpContract);
         
-        // 設置角色
+        // Set up roles
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(SECURITY_ROLE, msg.sender);
         
-        // 初始化 tokenId 計數器
+        // Initialize tokenId counter
         _tokenIdCounter = 0;
     }
 
-    // 安全管理員設置函數
+    // Security role setter function
     function setSecurityRole(address account, bool approved) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (approved) {
             grantRole(SECURITY_ROLE, account);
@@ -80,13 +80,13 @@ contract CreatorNFT is Ownable, ReentrancyGuard, AccessControl {
         }
     }
 
-    // 獲取下一個可用的 tokenId
+    // Get the next available tokenId
     function getNextTokenId() public view returns (uint256) {
         return _tokenIdCounter + 1;
     }
 
     /**
-     * @dev 創建ERC-721 NFT
+     * @dev Create an ERC-721 NFT.
      */
     function createERC721(address to, uint256 rarity, string memory imageUrl) external onlyOwner returns (uint256) {
         _tokenIdCounter++;
@@ -110,7 +110,7 @@ contract CreatorNFT is Ownable, ReentrancyGuard, AccessControl {
     }
 
     /**
-     * @dev 創建ERC-1155 NFT
+     * @dev Create an ERC-1155 NFT.
      */
     function createERC1155(address to, uint256 rarity, uint256 amount, string memory imageUrl) external onlyOwner returns (uint256) {
         _tokenIdCounter++;
@@ -134,50 +134,48 @@ contract CreatorNFT is Ownable, ReentrancyGuard, AccessControl {
     }
 
     /**
-     * @dev 鑄造FLP
+     * @dev Mint FLP token.
      */
     function _mintFLP(address to, uint256 /*tokenId*/, uint256 /*rarity*/, uint256 weight) internal returns (uint256) {
         uint256 flpTokenId = flpContract.totalSupply() + 1;
         flpContract.mint(to, flpTokenId, 0, 0, 0);
         uint256 extraFee = (weight * 10) / 100;
-        poolSystem.updatePools(extraFee, false);
+        poolSystem.updatePools(extraFee, true);
         return flpTokenId;
     }
 
     /**
-     * @dev 計算權重
+     * @dev Calculate weight based on rarity.
      */
     function calculateWeight(uint256 rarity) internal pure returns (uint256) {
-        // 根據稀有度計算權重
+        // Calculate weight as rarity multiplied by 100
         return rarity * 100;
     }
 
     /**
-     * @dev 獲取NFT信息
+     * @dev Get NFT information.
      */
     function getNFTInfo(uint256 tokenId) external view returns (NFTInfo memory) {
         return nftInfo[tokenId];
     }
 
     function _mintNFT(address to, uint256 tokenId) internal {
-        // 模擬鑄造 ERC721 NFT 動作，例如僅以事件形式記錄
-        // 實際上，請使用適當的 NFT 代幣合約的 mint 方法
+        // Simulate ERC721 minting; in practice, call the appropriate NFT token contract's mint method.
     }
 
     function _mintNFT1155(address to, uint256 tokenId, uint256 amount) internal {
-        // 模擬鑄造 ERC1155 NFT 動作
-        // 實際上，請使用適當的 NFT 代幣合約的 mint 方法
+        // Simulate ERC1155 minting; in practice, call the appropriate NFT token contract's mint method.
     }
 
     // -------------------------------
-    // 白名單系統功能
+    // Whitelist System Functions
     // -------------------------------
 
     event WhitelistEntrySet(address indexed user, uint8 phase, uint256 maxMint, uint256 mintStartTime, uint256 mintEndTime);
 
     /**
-     * @dev 設置單個地址的白名單
-     * @notice 只有合約擁有者可以調用此函數
+     * @dev Set whitelist entry for a single address.
+     * @notice Only the contract owner can call this function.
      */
     function setWhitelistEntry(
         address _addr,
@@ -190,7 +188,7 @@ contract CreatorNFT is Ownable, ReentrancyGuard, AccessControl {
         require(_phase > 0 && _phase <= 4, "Invalid phase");
         require(_maxMint > 0, "Invalid max mint amount");
         require(_mintEndTime > _mintStartTime, "Invalid time range");
-        require(_mintStartTime >= block.timestamp, "Start time must be in future");
+        require(_mintStartTime >= block.timestamp, "Start time must be in the future");
         
         whitelistEntries[_addr] = WhitelistEntry({
             phase: uint8(_phase),
@@ -204,8 +202,8 @@ contract CreatorNFT is Ownable, ReentrancyGuard, AccessControl {
     }
 
     /**
-     * @dev 批量設置白名單
-     * @notice 只有合約擁有者可以調用此函數
+     * @dev Batch set whitelist entries.
+     * @notice Only the contract owner can call this function.
      */
     function setWhitelistEntries(
         address[] calldata _addrs, 
@@ -222,8 +220,8 @@ contract CreatorNFT is Ownable, ReentrancyGuard, AccessControl {
     }
 
     /**
-     * @dev 移除白名單
-     * @notice 只有合約擁有者可以調用此函數
+     * @dev Remove an address from the whitelist.
+     * @notice Only the contract owner can call this function.
      */
     function removeFromWhitelist(address _addr) external onlyOwner {
         delete whitelistEntries[_addr];
@@ -231,8 +229,8 @@ contract CreatorNFT is Ownable, ReentrancyGuard, AccessControl {
     }
 
     /**
-     * @dev 批量移除白名單
-     * @notice 只有合約擁有者可以調用此函數
+     * @dev Batch remove whitelist entries.
+     * @notice Only the contract owner can call this function.
      */
     function removeFromWhitelistBatch(address[] calldata _addrs) external onlyOwner {
         for (uint256 i = 0; i < _addrs.length; i++) {
@@ -242,39 +240,39 @@ contract CreatorNFT is Ownable, ReentrancyGuard, AccessControl {
     }
 
     /**
-     * @dev 檢查地址是否在白名單中
+     * @dev Check if an address is whitelisted.
      */
     function isWhitelisted(address _addr) external view returns (bool) {
         return whitelistEntries[_addr].maxMint > 0;
     }
 
     /**
-     * @dev 獲取白名單信息
+     * @dev Get whitelist information for an address.
      */
     function getWhitelistInfo(address _addr) external view returns (WhitelistEntry memory) {
         return whitelistEntries[_addr];
     }
 
     // -------------------------------
-    // 四種銷售階段鑄造入口
+    // Minting Entry Points for Different Sale Phases
     // -------------------------------
 
-    // currentPhase: 1: 保證, 2: 先搶先贏, 3: 公售, 4: 其他, 5: 其他
+    // currentPhase: 1: Guarantee, 2: First-Come-First-Serve, 3: Public Sale, 4: Others, 5: Others
     uint8 public currentPhase;
-    // 對應每個階段的鑄造價格（單位：wei）
+    // Mapping for minting price for each phase (in wei)
     mapping(uint8 => uint256) public phasePrice;
 
-    // 管理員設定當前銷售階段
+    // Admin can set the current sale phase
     function setCurrentPhase(uint8 _phase) external onlyOwner {
         currentPhase = _phase;
     }
 
-    // 管理員設定特定階段的鑄造價格
+    // Admin can set the minting price for a specific phase
     function setPhasePrice(uint8 _phase, uint256 _price) external onlyOwner {
         phasePrice[_phase] = _price;
     }
 
-    // 保證階段 (phase == 1)
+    // Guarantee Phase (phase == 1)
     function mintGuarantee(uint256 rarity, string memory imageUrl) external virtual payable returns (uint256) {
         _tokenIdCounter++;
         uint256 newTokenId = _tokenIdCounter;
@@ -302,7 +300,7 @@ contract CreatorNFT is Ownable, ReentrancyGuard, AccessControl {
         return newTokenId;
     }
 
-    // 先搶先贏階段 (phase == 2)
+    // First-Come-First-Serve Phase (phase == 2)
     function mintFirstComeFirstServe(uint256 rarity, string memory imageUrl) external virtual payable returns (uint256) {
         _tokenIdCounter++;
         uint256 newTokenId = _tokenIdCounter;
@@ -329,7 +327,7 @@ contract CreatorNFT is Ownable, ReentrancyGuard, AccessControl {
         return newTokenId;
     }
 
-    // 公售階段 (phase == 3)
+    // Public Sale Phase (phase == 3)
     function mintPublicSale(uint256 rarity, string memory imageUrl) external virtual payable returns (uint256) {
         _tokenIdCounter++;
         uint256 newTokenId = _tokenIdCounter;
@@ -356,7 +354,7 @@ contract CreatorNFT is Ownable, ReentrancyGuard, AccessControl {
         return newTokenId;
     }
 
-    // 其他階段 (phase == 4)
+    // Other Phase (phase == 4)
     function mintOther(uint256 rarity, string memory imageUrl) external virtual payable returns (uint256) {
         _tokenIdCounter++;
         uint256 newTokenId = _tokenIdCounter;

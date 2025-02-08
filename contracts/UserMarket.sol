@@ -9,7 +9,7 @@ contract UserMarket is Ownable {
     IPoolSystem public poolSystem;
     address public paymentToken;
 
-    // 事件
+    // Events
     event UserMarketTrade(uint256 indexed tokenId, address indexed seller, address indexed buyer, uint256 price);
     event PaymentTokenUpdated(address indexed newToken);
 
@@ -19,7 +19,7 @@ contract UserMarket is Ownable {
     }
 
     /**
-     * @dev 更新支付代幣
+     * @dev Updates the payment token.
      */
     function updatePaymentToken(address newToken) external {
         paymentToken = newToken;
@@ -27,14 +27,14 @@ contract UserMarket is Ownable {
     }
 
     /**
-     * @dev 用戶之間交易
+     * @dev Facilitates trading between users.
      */
     function trade(uint256 tokenId, address seller, address buyer, uint256 price) external {
-        // 處理系統費用
-        uint256 fee = (price * 30) / 1000; // 系統費用 (3%)
+        // Process system fee
+        uint256 fee = (price * 30) / 1000; // System fee (3%)
         poolSystem.updatePools(fee, true);
 
-        // 轉賬ETH或代幣給賣家
+        // Transfer ETH or token to the seller
         if (paymentToken == address(0)) {
             uint256 finalPrice = price - fee;
             (bool success, ) = payable(seller).call{value: finalPrice}("");

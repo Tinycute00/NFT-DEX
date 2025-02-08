@@ -6,16 +6,17 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * @title CreatorNFT721Unlimited
- * @dev 此合約用於鑄造 ERC721 NFT，支持創作者直接設定 NFT 的稀有度與圖片地址，
- *      鑄造開始後凍結配置，不允許再調整。並預留事件與接口供未來 NFT DEX 集成。
+ * @dev This contract is used to mint ERC721 NFTs. It allows the creator to set the rarity and image URL.
+ *      Once minting begins, the configuration is frozen and cannot be modified. It also emits events and
+ *      provides interfaces for future NFT DEX integration.
  */
 contract CreatorNFT721Unlimited is ERC721, Ownable {
     uint256 public nextTokenId;
     bool public configurationFrozen;
 
     struct NFTMetadata {
-        uint256 rarity;  // NFT 稀有度（1~100可自定義）
-        string imageUrl; // 圖片URL
+        uint256 rarity;  // NFT rarity (customizable from 1 to 100)
+        string imageUrl; // Image URL
     }
     
     mapping(uint256 => NFTMetadata) public nftMetadata;
@@ -29,12 +30,11 @@ contract CreatorNFT721Unlimited is ERC721, Ownable {
     }
 
     /**
-     * @dev 鑄造 NFT。鑄造開始後，配置凍結，
-     *      NFT 的稀有度和圖片地址由創作者直接設定。
-     * @param to 接收 NFT 的地址
-     * @param rarity NFT 稀有度（1~100）
-     * @param imageUrl NFT 圖片的URL
-     * @return tokenId 鑄造出的 NFT tokenId
+     * @dev Mints an NFT. On the first mint, the configuration is frozen.
+     * @param to The address that will receive the NFT.
+     * @param rarity The rarity of the NFT (1~100).
+     * @param imageUrl The URL of the NFT image.
+     * @return tokenId The minted NFT tokenId.
      */
     function mintNFT(address to, uint256 rarity, string calldata imageUrl) external onlyOwner returns (uint256) {
         if (!configurationFrozen) {

@@ -6,32 +6,33 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * @title CreatorNFT1155Unlimited
- * @dev 此合約用於鑄造 ERC1155 NFT，支持創作者動態添加任意部件配置，
- *      每個部件的選項稀有度範圍為 1~100，供應量由創作者設定；
- *      鑄造開始後凍結配置，不允許再作修改，並預留事件與接口供未來 NFT DEX 集成。
+ * @dev This contract is used to mint ERC1155 NFTs. It allows the creator to dynamically add component configurations,
+ *      where each component's option rarity ranges from 1 to 100 and the supply limits are set by the creator.
+ *      Once minting begins, the configuration is frozen and cannot be modified. It also emits events and
+ *      provides interfaces for future NFT DEX integration.
  */
 contract CreatorNFT1155Unlimited is ERC1155, Ownable {
-    // 定義部件配置結構
+    // Structure to define component configuration
     struct PartConfig {
-        string partName;           // 部件名稱
-        uint256[] rarityForOption; // 每個選項的稀有度，範圍 1~100
-        uint256[] supplyLimit;     // 每個選項的最大供應量
-        uint256[] mintedCount;     // 每個選項已鑄造數量
+        string partName;           // Component name
+        uint256[] rarityForOption; // Rarity for each option (values between 1 and 100)
+        uint256[] supplyLimit;     // Maximum supply for each option
+        uint256[] mintedCount;     // Number minted for each option
     }
 
-    // 動態存儲所有部件配置
+    // Dynamic storage for all component configurations
     PartConfig[] public parts;
 
-    // 鑄造開始後，配置會被凍結，不允許修改
+    // Once minting begins, the configuration is frozen
     bool public configurationFrozen;
 
-    // tokenId 自增計數器
+    // Auto-increment counter for tokenId
     uint256 public nextTokenId;
 
-    // 存儲 NFT 元數據：記錄每個 NFT 的部件選項與綜合稀有度
+    // Structure to store NFT metadata: selected options for each component and overall rarity
     struct NFTMetadata {
-        uint8[] selectedOptions; // 每個部件選擇的選項索引
-        uint256 overallRarity;   // 綜合稀有度
+        uint8[] selectedOptions; // Selected option index for each component
+        uint256 overallRarity;   // Overall rarity
     }
     mapping(uint256 => NFTMetadata) public nftMetadata;
 
@@ -45,10 +46,10 @@ contract CreatorNFT1155Unlimited is ERC1155, Ownable {
     }
 
     /**
-     * @dev 添加一個新的部件配置，僅 owner 可調用，且必須在配置凍結前添加。
-     * @param _partName 部件名稱
-     * @param _rarityForOption 每個選項的稀有度數組，值需在 1~100 之間
-     * @param _supplyLimit 每個選項的最大供應量數組
+     * @dev Adds a new component configuration. Only callable by the owner and prior to configuration freeze.
+     * @param _partName The component name.
+     * @param _rarityForOption Array of rarity values for each option (each value between 1 and 100).
+     * @param _supplyLimit Array of maximum supply values for each option.
      */
     function addPartConfig(
         string calldata _partName,
@@ -61,7 +62,7 @@ contract CreatorNFT1155Unlimited is ERC1155, Ownable {
         for (uint256 i = 0; i < len; i++) {
             require(_rarityForOption[i] >= 1 && _rarityForOption[i] <= 100, "Rarity must be between 1 and 100");
         }
-        // 初始化 mintedCount 陣列
+        // Initialize mintedCount array with zeros
         uint256[] memory zeros = new uint256[](len);
         PartConfig memory newPart = PartConfig({
             partName: _partName,
@@ -74,8 +75,8 @@ contract CreatorNFT1155Unlimited is ERC1155, Ownable {
     }
 
     /**
-     * @dev 內部函數，計算綜合稀有度，這裡採用簡單平均：
-     *      例如：如果選擇的稀有度為 [80, 40, 30, 10]，則綜合稀有度 = (80+40+30+10)/4
+     * @dev Internal function to calculate overall rarity using a simple average.
+     *      For example, if the selected rarities are [80, 40, 30, 10], then overall rarity = (80 + 40 + 30 + 10) / 4.
      */
     function _calculateOverallRarity(uint8[] memory selections) internal view returns (uint256) {
         require(selections.length == parts.length, "Selections length mismatch");
@@ -89,11 +90,11 @@ contract CreatorNFT1155Unlimited is ERC1155, Ownable {
     }
 
     /**
-     * @dev 鑄造 NFT，僅 owner 調用；第一次鑄造時凍結部件配置。
-     *      用戶提交 selections 陣列，表示每個部件所選擇的選項索引。
-     * @param to 接收 NFT 的地址
-     * @param selections 每個部件的選項索引，長度必須與 parts 的數量一致
-     * @return tokenId 鑄造出的 NFT tokenId
+     * @dev Mints an NFT. Only callable by the owner; freezes configuration upon the first mint.
+     *      Users submit an array of selections representing the option index chosen for each component.
+     * @param to The address to receive the NFT.
+     * @param selections Array of selected option indices; length must match the number of components.
+     * @return tokenId The tokenId of the minted NFT.
      */
     function mintNFT1155(address to, uint8[] calldata selections) external onlyOwner returns (uint256) {
         require(selections.length == parts.length, "Selections length mismatch");
@@ -101,14 +102,14 @@ contract CreatorNFT1155Unlimited is ERC1155, Ownable {
             configurationFrozen = true;
             emit ConfigurationFrozen();
         }
-        // 檢查每個部件選項的供應量是否足夠
+        // Check that each component's selected option has available supply
         for (uint256 i = 0; i < parts.length; i++) {
             uint8 optionIndex = selections[i];
             require(optionIndex < parts[i].supplyLimit.length, "Invalid option index");
             require(parts[i].mintedCount[optionIndex] < parts[i].supplyLimit[optionIndex], "Selected option sold out");
         }
         uint256 overallRarity = _calculateOverallRarity(selections);
-        // 更新每個部件的 mintedCount
+        // Update minted count for each component
         for (uint256 i = 0; i < parts.length; i++) {
             parts[i].mintedCount[selections[i]]++;
         }
@@ -118,7 +119,7 @@ contract CreatorNFT1155Unlimited is ERC1155, Ownable {
             selectedOptions: selections,
             overallRarity: overallRarity
         });
-        // 鑄造 NFT，數量為 1
+        // Mint the NFT (quantity is 1)
         _mint(to, tokenId, 1, "");
         emit NFTMinted(tokenId, to, selections, overallRarity);
         return tokenId;

@@ -1,12 +1,12 @@
 /*
   test/MarketSimulation.test.mjs
-  測試市場模擬，根據用戶需求: 用戶自訂額外溢價 = (合約預設溢價 * 2) (下限為 0.03 ETH)，但賣給系統時用戶自訂價格不成立
+  Test market simulation based on user requirements: User-defined extra premium = (contract default premium * 2) (minimum 0.03 ETH), but user-defined price does not apply when selling to the system.
 */
 import { expect } from "chai";
 import pkg from "hardhat";
 const { ethers } = pkg;
 
-// 定義 ERC721 模型情境：三個類別，各自具有不同預設溢價 (單位 ETH)
+// Define ERC721 model scenario: three categories, each with different default premiums (in ETH)
 const ERC721_SCENARIO = {
   categories: [
     { prob: 0.50, premium: 0.03 },
@@ -15,7 +15,7 @@ const ERC721_SCENARIO = {
   ]
 };
 
-// 定義 ERC1155 模型情境：根據各類別比例，設置不同預設溢價
+// Define ERC1155 model scenario: set different default premiums based on category proportions
 const ERC1155_TOTAL = 10 + 50 + 250 + 250 + 450; // 1010
 const ERC1155_SCENARIO = {
   categories: [
@@ -27,23 +27,23 @@ const ERC1155_SCENARIO = {
   ]
 };
 
-// 模擬六種市場情境
+// Simulate six market scenarios
 const scenarios = [
-  { stake: 0.50, systemInteraction: false, description: "Scenario 1: 50% 質押, 非系統市場交易" },
-  { stake: 0.50, systemInteraction: true, delayed: true, description: "Scenario 2: 50% 質押, 系統市場交易 (延時 10 天)" },
-  { stake: 0.20, systemInteraction: false, description: "Scenario 3: 20% 質押, 非系統市場交易" },
-  { stake: 0.20, systemInteraction: true, delayed: true, description: "Scenario 4: 20% 質押, 系統市場交易 (延時 10 天)" },
-  { stake: 0.00, systemInteraction: false, description: "Scenario 5: 0% 質押, 非系統市場交易" },
-  { stake: 0.00, systemInteraction: true, delayed: true, description: "Scenario 6: 0% 質押, 系統市場交易 (延時 10 天)" }
+  { stake: 0.50, systemInteraction: false, description: "Scenario 1: 50% staking, non-system market transaction" },
+  { stake: 0.50, systemInteraction: true, delayed: true, description: "Scenario 2: 50% staking, system market transaction (delayed 10 days)" },
+  { stake: 0.20, systemInteraction: false, description: "Scenario 3: 20% staking, non-system market transaction" },
+  { stake: 0.20, systemInteraction: true, delayed: true, description: "Scenario 4: 20% staking, system market transaction (delayed 10 days)" },
+  { stake: 0.00, systemInteraction: false, description: "Scenario 5: 0% staking, non-system market transaction" },
+  { stake: 0.00, systemInteraction: true, delayed: true, description: "Scenario 6: 0% staking, system market transaction (delayed 10 days)" }
 ];
 
-// 模擬參數設定
+// Simulation parameters
 const DAYS = 30;
-const DAILY_TX = 200; // 每天 200 筆交易
-const BASE_MINT_PRICE = 0.03; // 基礎價格（ETH）
-const FLP_FACTOR = 100; // 每筆交易的 FLP 分配 = (用戶額外溢價) * FLP_FACTOR
+const DAILY_TX = 200; // 200 transactions per day
+const BASE_MINT_PRICE = 0.03; // Base price (ETH)
+const FLP_FACTOR = 100; // FLP allocation per transaction = (user extra premium) * FLP_FACTOR
 
-// 模擬 ERC721 單筆交易，返回預設合約溢價 (ETH)
+// Simulate a single ERC721 transaction, returning the default contract premium (ETH)
 function simulateERC721Transaction() {
   const r = Math.random();
   let cumulative = 0;
@@ -54,7 +54,7 @@ function simulateERC721Transaction() {
   return ERC721_SCENARIO.categories[0].premium;
 }
 
-// 模擬 ERC1155 單筆交易，返回預設合約溢價 (ETH)
+// Simulate a single ERC1155 transaction, returning the default contract premium (ETH)
 function simulateERC1155Transaction() {
   const r = Math.random();
   let cumulative = 0;
@@ -65,21 +65,21 @@ function simulateERC1155Transaction() {
   return ERC1155_SCENARIO.categories[ERC1155_SCENARIO.categories.length - 1].premium;
 }
 
-// 模擬一天內交易情況
-// 對每筆交易，若隨機符合質押條件，則進行計算。
-// 若系統市場交互啟用且本筆交易屬於系統市場 (25% 機率)，在延時日 (前10天) 則跳過計算。
-// 非系統市場交易時：用戶額外溢價 = max(0.03, (合約預設溢價 * 2))
+// Simulate daily transactions
+// For each transaction, if it meets the staking condition, perform calculations.
+// If system market interaction is enabled and the transaction is a system market one (25% chance), skip calculation during delay days (first 10 days).
+// For non-system market transactions: user extra premium = max(0.03, (contract default premium * 2))
 function simulateDailyTransactions(day, stake, systemInteraction, delayed) {
   let dailyUserExtra = 0;
   let dailyFLP = 0;
   const erc721Tx = DAILY_TX / 2;
   const erc1155Tx = DAILY_TX / 2;
   
-  // ERC721 交易模擬
+  // ERC721 transaction simulation
   for (let i = 0; i < erc721Tx; i++) {
     if (Math.random() <= stake) {
       const isSystem = systemInteraction && (Math.random() < 0.25);
-      if (isSystem && delayed && day <= 10) continue; // 延時期間略過
+      if (isSystem && delayed && day <= 10) continue; // Skip during delay period
       const contractPremium = simulateERC721Transaction();
       let userExtraPremium = 0;
       if (!isSystem) {
@@ -90,7 +90,7 @@ function simulateDailyTransactions(day, stake, systemInteraction, delayed) {
     }
   }
   
-  // ERC1155 交易模擬
+  // ERC1155 transaction simulation
   for (let i = 0; i < erc1155Tx; i++) {
     if (Math.random() <= stake) {
       const isSystem = systemInteraction && (Math.random() < 0.25);
@@ -107,7 +107,7 @@ function simulateDailyTransactions(day, stake, systemInteraction, delayed) {
   return { dailyUserExtra, dailyFLP };
 }
 
-// 模擬整體市場行為，返回每天的累計數據
+// Simulate overall market behavior, returning cumulative data for each day
 function simulateMarket(scenario) {
   let cumulativeExtra = 0;
   let cumulativeFLP = 0;
@@ -121,7 +121,7 @@ function simulateMarket(scenario) {
   return dailyData;
 }
 
-// 測試套件
+// Test suite
 describe("Market Simulation", function () {
   scenarios.forEach((scen, index) => {
     it(`should simulate ${scen.description}`, function () {
@@ -130,7 +130,7 @@ describe("Market Simulation", function () {
       console.log(`\nScenario ${index + 1}: ${scen.description}`);
       console.log(`After ${DAYS} days: Cumulative User Extra Premium = ${lastDay.cumulativeExtra.toFixed(4)} ETH, Cumulative FLP Allocation = ${lastDay.cumulativeFLP.toFixed(2)}`);
       
-      // 當質押比例大於 0 時，累計用戶自訂額外溢價與 FLP 分配應大於 0
+      // When staking ratio is greater than 0, cumulative user extra premium and FLP allocation should be greater than 0
       if (scen.stake > 0) {
         expect(lastDay.cumulativeExtra).to.be.greaterThan(0);
         expect(lastDay.cumulativeFLP).to.be.greaterThan(0);

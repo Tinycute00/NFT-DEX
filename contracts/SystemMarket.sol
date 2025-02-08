@@ -9,7 +9,7 @@ contract SystemMarket is Ownable {
     IPoolSystem public poolSystem;
     address public paymentToken;
 
-    // 事件
+    // Events
     event SystemMarketTrade(uint256 indexed tokenId, address indexed trader, uint256 price, bool isBuy);
     event PaymentTokenUpdated(address indexed newToken);
 

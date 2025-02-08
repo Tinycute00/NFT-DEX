@@ -38,7 +38,7 @@ contract NFTStaking is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Stake NFT
+     * @dev Stake an NFT.
      */
     function stakeNFT(uint256 tokenId) external nonReentrant {
         require(nftContract.ownerOf(tokenId) == msg.sender, "Not the owner of the NFT");
@@ -52,7 +52,7 @@ contract NFTStaking is Ownable, ReentrancyGuard {
 
         stakedTokens[msg.sender].push(tokenId);
 
-        // 鑄造FLP
+        // Mint FLP token
         uint256 flpTokenId = _mintFLP(msg.sender, tokenId);
 
         emit NFTStaked(msg.sender, tokenId, block.timestamp);
@@ -60,7 +60,7 @@ contract NFTStaking is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Unstake NFT and burn FLP
+     * @dev Unstake an NFT and burn the corresponding FLP token.
      */
     function unstakeNFT(uint256 tokenId) external nonReentrant {
         require(stakes[tokenId].owner == msg.sender, "Not the owner of the staked NFT");
@@ -70,23 +70,23 @@ contract NFTStaking is Ownable, ReentrancyGuard {
         delete stakes[tokenId];
         _removeStakedToken(msg.sender, tokenId);
 
-        // 銷毀FLP
+        // Burn FLP token
         _burnFLP(msg.sender, tokenId);
 
         emit NFTUnstaked(msg.sender, tokenId, block.timestamp);
     }
 
     /**
-     * @dev Mint FLP
+     * @dev Internal function to mint an FLP token.
      */
     function _mintFLP(address to, uint256 tokenId) internal returns (uint256) {
         uint256 flpTokenId = flpContract.totalSupply() + 1;
         uint256 rarity = nftInfo[tokenId].rarity;
         uint256 weight = nftInfo[tokenId].weight;
-        // 將 FLP 與質押的 NFT 相關聯，傳入完整的 NFT 訊息
+        // Associate the FLP token with the staked NFT
         flpContract.mint(to, flpTokenId, tokenId, rarity, weight);
 
-        // 計算額外費用並更新溢價池（此費用屬於系統，不參與 FLP 分紅）
+        // Calculate extra fee and update premium pool (this fee belongs to the system and is not included in FLP dividends)
         uint256 extraFee = (weight * 10) / 100;
         poolSystem.updatePools(extraFee, true);
 
@@ -94,7 +94,7 @@ contract NFTStaking is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Burn FLP
+     * @dev Internal function to burn an FLP token.
      */
     function _burnFLP(address from, uint256 tokenId) internal {
         uint256 flpTokenId = flpContract.totalSupply();
@@ -102,7 +102,7 @@ contract NFTStaking is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Remove staked token from the list
+     * @dev Removes a staked token from the list.
      */
     function _removeStakedToken(address owner, uint256 tokenId) internal {
         uint256[] storage tokens = stakedTokens[owner];
@@ -116,7 +116,7 @@ contract NFTStaking is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Get staked tokens of an owner
+     * @dev Returns the list of tokens staked by an owner.
      */
     function getStakedTokens(address owner) external view returns (uint256[] memory) {
         return stakedTokens[owner];

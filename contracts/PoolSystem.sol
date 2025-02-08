@@ -4,27 +4,27 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract PoolSystem is Ownable {
-    // 市場信息結構體
+    // Market information structure
     struct MarketInfo {
-        uint256 basePool;        // 基礎池餘額
-        uint256 basePoolTotal;   // 基礎池累計總額
-        uint256 premiumPool;     // 溢價池餘額
+        uint256 basePool;        // Base pool balance
+        uint256 basePoolTotal;   // Total accumulated base pool
+        uint256 premiumPool;     // Premium pool balance
     }
 
-    // 常量
-    uint256 private constant BASE_POOL_RATE = 200;   // 基礎池比率 (20%)
-    uint256 private constant PREMIUM_POOL_RATE = 200; // 溢價池比率 (20%)
-    uint256 private constant PROJECT_INCOME_RATE = 100; // 項目收入比率 (10%)
-    uint256 private constant SCALE = 1000;           // 比例基數
+    // Constants
+    uint256 private constant BASE_POOL_RATE = 200;   // Base pool rate (20%)
+    uint256 private constant PREMIUM_POOL_RATE = 200; // Premium pool rate (20%)
+    uint256 private constant PROJECT_INCOME_RATE = 100; // Project income rate (10%)
+    uint256 private constant SCALE = 1000;            // Scaling factor
 
-    // 市場狀態
+    // Market state
     MarketInfo public marketInfo;
 
-    // 事件
+    // Event emitted when the pool is updated
     event PoolUpdated(uint256 basePool, uint256 premiumPool);
 
     /**
-     * @dev 更新市場池
+     * @dev Updates the market pools.
      */
     function updatePools(uint256 amount, bool isSystemFee) external {
         if (isSystemFee) {
@@ -32,8 +32,7 @@ contract PoolSystem is Ownable {
             uint256 projectIncome = (amount * PROJECT_INCOME_RATE) / SCALE;
 
             marketInfo.premiumPool += premiumAmount;
-            // 假設項目收入的處理邏輯在這裡
-            // 例如：將項目收入轉移到項目地址
+            // Assume project income handling occurs here, e.g. transferring to a project address.
             // (bool success, ) = payable(projectAddress).call{value: projectIncome}("");
             // require(success, "Transfer failed");
 
@@ -46,7 +45,7 @@ contract PoolSystem is Ownable {
     }
 
     /**
-     * @dev 獲取市場信息
+     * @dev Retrieves the current market information.
      */
     function getMarketInfo() external view returns (MarketInfo memory) {
         return marketInfo;

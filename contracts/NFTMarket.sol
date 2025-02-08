@@ -5,35 +5,35 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 
 /**
  * @title NFTMarket
- * @dev 處理NFT市場交易邏輯的合約
+ * @dev Contract handling NFT market trading logic.
  */
 contract NFTMarket is ReentrancyGuardUpgradeable {
-    // 市場信息結構體
+    // Market information structure
     struct MarketInfo {
-        uint256 basePool;        // 基礎池餘額
-        uint256 basePoolTotal;   // 基礎池累計總額
-        uint256 premiumPool;     // 溢價池餘額
-        bool isActive;           // 市場是否活躍
+        uint256 basePool;        // Base pool balance
+        uint256 basePoolTotal;   // Total accumulated base pool
+        uint256 premiumPool;     // Premium pool balance
+        bool isActive;           // Whether the market is active
     }
     
-    // NFT信息結構體
+    // NFT information structure
     struct NFTInfo {
-        uint256 basePrice;      // 基礎價格
-        uint256 rarity;         // 稀有度
-        bool priceConfirmed;    // 價格是否確認
-        bool inSystemMarket;    // 是否在系統市場中
+        uint256 basePrice;      // Base price of NFT
+        uint256 rarity;         // Rarity of NFT
+        bool priceConfirmed;    // Whether the price is confirmed
+        bool inSystemMarket;    // Whether the NFT is in the system market
     }
     
-    // 常量
-    uint256 private constant SYSTEM_FEE = 25;        // 系統費用 (2.5%)
-    uint256 private constant BASE_POOL_RATE = 200;   // 基礎池比率 (20%)
-    uint256 private constant PREMIUM_POOL_RATE = 200; // 溢價池比率 (20%)
-    uint256 private constant SCALE = 1000;           // 比例基數
+    // Constants
+    uint256 private constant SYSTEM_FEE = 25;        // System fee (2.5%)
+    uint256 private constant BASE_POOL_RATE = 200;   // Base pool rate (20%)
+    uint256 private constant PREMIUM_POOL_RATE = 200; // Premium pool rate (20%)
+    uint256 private constant SCALE = 1000;           // Scaling factor
     
-    // 市場狀態
+    // Market state
     MarketInfo public marketInfo;
     
-    // 事件
+    // Events
     event SystemMarketTrade(uint256 indexed tokenId, address indexed trader, uint256 price, bool isBuy);
     event NFTSoldToSystem(uint256 indexed tokenId, address indexed seller, uint256 price);
     event PriceConfirmed(uint256 indexed tokenId, uint256 basePrice);
@@ -41,12 +41,12 @@ contract NFTMarket is ReentrancyGuardUpgradeable {
     event PoolUpdated(uint256 basePool, uint256 premiumPool);
     
     /**
-     * @dev 計算系統市場價格
+     * @dev Calculates the system market price.
      */
     function getSystemPrice(uint256 basePrice, uint256 rarity) public view returns (uint256) {
         if (marketInfo.premiumPool == 0) return basePrice;
         
-        uint256 maxPremium = (marketInfo.basePoolTotal * 45) / 100; // 最大溢價為基礎池的45%
+        uint256 maxPremium = (marketInfo.basePoolTotal * 45) / 100; // Maximum premium is 45% of the base pool
         uint256 availablePremium = marketInfo.premiumPool > maxPremium ? maxPremium : marketInfo.premiumPool;
         
         uint256 premium = (availablePremium * rarity) / 10000;
@@ -54,14 +54,14 @@ contract NFTMarket is ReentrancyGuardUpgradeable {
     }
     
     /**
-     * @dev 獲取市場信息
+     * @dev Retrieves the market information.
      */
     function getMarketInfo() public view returns (MarketInfo memory) {
         return marketInfo;
     }
     
     /**
-     * @dev 更新市場池
+     * @dev Updates the market pools.
      */
     function _updatePools(uint256 amount, bool isSystemFee) internal {
         if (isSystemFee) {
@@ -81,7 +81,7 @@ contract NFTMarket is ReentrancyGuardUpgradeable {
     }
     
     /**
-     * @dev 處理系統費用
+     * @dev Handles the system fee.
      */
     function _handleSystemFee(uint256 price) internal returns (uint256) {
         uint256 fee = (price * SYSTEM_FEE) / SCALE;
@@ -90,7 +90,7 @@ contract NFTMarket is ReentrancyGuardUpgradeable {
     }
     
     /**
-     * @dev 切換市場狀態
+     * @dev Toggles the market state.
      */
     function toggleMarket() internal {
         marketInfo.isActive = !marketInfo.isActive;

@@ -1,35 +1,35 @@
-// 定義模擬後端全局對象 FakeContract
+// Define the global simulated backend object FakeContract
 var FakeContract = {
-  // 預設兩個用戶，每個用戶內包含姓名、FLP 余額以及模擬的 ETH 錢包餘額
+  // Two default users, each with a name, FLP balance, and simulated ETH wallet balance
   users: {
     "Alice": { name: "Alice", flp: 0, eth: 1000 },
     "Bob": { name: "Bob", flp: 0, eth: 1000 }
   },
-  // 當前操作的用戶，預設為 Alice
+  // The current active user, default is Alice
   currentUser: "Alice",
-  // NFT 資料庫，用 tokenId 做鍵值
+  // NFT database keyed by tokenId
   NFTs: {},
-  // 市場上架的 NFT 記錄 (tokenId => { price, seller })
+  // Market listings for NFTs (tokenId => { price, seller })
   listings: {},
-  // 計數器，每次鑄 NFT 時自動遞增 tokenId
+  // Counter; increments automatically each time an NFT is minted
   nextTokenId: 1,
-  // 新增全局變量：該系列 NFT 的總稀有度與底價池（單位 ETH）
+  // Global variables: total rarity sum and base price pool (in ETH) for this NFT series
   totalRaritySum: 335,
   basePricePool: 10,
 
-  // 新增：質押記錄 (tokenId => 質押記錄)
+  // Added: staking records (tokenId => staking record)
   stakeRecords: {},
 
-  // 新增：FLP tokens 存放領域（FLP 為質押 NFT 後鑄造出的 ERC721 Token，tokenId 與 NFT tokenId 相關聯）
+  // Added: storage area for FLP tokens (FLP is the ERC721 Token minted upon NFT staking, linked to the NFT tokenId)
   flpTokens: {},
 
-  // 新增：返回指定 FLP token 的資訊（根據 tokenId）
+  // Returns the specified FLP token information (based on tokenId)
   getFLPToken: function(tokenId) {
     tokenId = parseInt(tokenId);
     return this.flpTokens[tokenId] || null;
   },
 
-  // 新增：返回指定用戶所有 FLP token 的陣列
+  // Returns an array of all FLP tokens owned by the given user
   getUserFLPTokens: function(user) {
     var tokens = [];
     for (var tokenId in this.flpTokens) {
@@ -40,14 +40,14 @@ var FakeContract = {
     return tokens;
   },
 
-  // 模擬市場交易，這裡僅返回一個交易結果字串
+  // Simulate a market transaction; returns a transaction result string
   simulateMarket: function() {
-    return "市場交易模擬完成。";
+    return "Market simulation completed.";
   },
 
   /**
-   * 模擬鑄造 NFT
-   * 將 NFT 鑄造給當前用戶，計算權重 = rarity * 100
+   * Simulate NFT minting.
+   * Mints an NFT to the current user; the weight is calculated as rarity * 100.
    */
   mintNFT: function(rarity, imageUrl) {
     var tokenId = this.nextTokenId++;
@@ -64,8 +64,8 @@ var FakeContract = {
   },
 
   /**
-   * 模擬購買 NFT
-   * 僅針對市場上架（即 listings 中存在）的 NFT 進行購買
+   * Simulate NFT purchase.
+   * Only works if the NFT is listed in the market (i.e. exists in listings).
    */
   buyNFT: function(tokenId) {
     var nft = this.NFTs[tokenId];
@@ -74,14 +74,14 @@ var FakeContract = {
     var buyer = this.currentUser;
     if (nft.owner === buyer) return null;
     var price = listing.price;
-    // 檢查買家 ETH 餘額是否充足
+    // Check whether the buyer has enough ETH
     if (this.users[buyer].eth < price) {
-      alert("餘額不足，無法購買該 NFT");
+      alert("Insufficient balance, unable to purchase NFT");
       return null;
     }
-    // 扣減買家錢包餘額
+    // Deduct the ETH from the buyer's wallet
     this.users[buyer].eth -= price;
-    // 將 NFT 轉讓給買家
+    // Transfer NFT ownership to the buyer
     nft.owner = buyer;
     delete this.listings[tokenId];
     this.updateWalletDisplay();
@@ -89,7 +89,7 @@ var FakeContract = {
   },
 
   /**
-   * 模擬 FLP 交互：賺取或花費 FLP
+   * Simulate FLP interaction: earn or spend FLP.
    */
   interactFLP: function(action, amount) {
     if (action === "earn") {
@@ -103,38 +103,38 @@ var FakeContract = {
   },
 
   /**
-   * 修改：模擬質押 NFT （新版）
-   * 將 NFT 的所有權標記為 "STAKE"，並鑄造出對應的 FLP Token（FLP 為 ERC721 類型）
+   * Modified: Simulate NFT staking (new version).
+   * Marks the NFT's owner as "STAKE" and mints a corresponding FLP token (FLP is of ERC721 type).
    */
   stakeNFT: function(tokenId) {
     tokenId = parseInt(tokenId);
     if (isNaN(tokenId)) {
-      alert("tokenId 輸入格式錯誤，必須為數字。");
+      alert("tokenId format error, must be a number.");
       return null;
     }
     var nft = this.NFTs[tokenId];
     if (!nft) {
-      alert("該 NFT 不存在。");
+      alert("NFT does not exist.");
       return null;
     }
     if (nft.owner !== this.currentUser) {
-      alert("您不擁有該 NFT，無法質押。");
+      alert("You do not own this NFT, cannot stake it.");
       return null;
     }
     if (typeof this.stakeRecords[tokenId] !== "undefined") {
-      alert("該 NFT 已處於質押狀態。");
+      alert("This NFT is already staked.");
       return null;
     }
-    // 質押 NFT：將所有權標記為 "STAKE"
+    // Stake NFT: mark the owner as "STAKE"
     nft.owner = "STAKE";
-    // 記錄質押詳情（不再扣減 fungible FLP，而是鑄造 FLP token）
+    // Record staking details (instead of deducting fungible FLP, mint an FLP token)
     this.stakeRecords[tokenId] = {
       tokenId: tokenId,
       staker: this.currentUser,
       stakeTime: Date.now(),
       series: nft.series || "Default"
     };
-    // 鑄造 FLP Token，與 NFT tokenId 綁定
+    // Mint FLP token bound to the NFT tokenId
     this.flpTokens[tokenId] = {
       flpTokenId: tokenId,
       linkedNFT: tokenId,
@@ -142,55 +142,55 @@ var FakeContract = {
       stakeTime: Date.now(),
       series: nft.series || "Default"
     };
-    return { tokenId: tokenId, msg: "質押成功", details: this.stakeRecords[tokenId], flp: this.flpTokens[tokenId] };
+    return { tokenId: tokenId, msg: "Staking successful", details: this.stakeRecords[tokenId], flp: this.flpTokens[tokenId] };
   },
 
   /**
-   * 修改：模擬解除質押 NFT
-   * 將 NFT 所有權返回給當前用戶，並銷毀對應的 FLP Token
+   * Modified: Simulate NFT unstaking.
+   * Returns NFT ownership to the current user and burns the corresponding FLP token.
    */
   unstakeNFT: function(tokenId) {
     tokenId = parseInt(tokenId);
     if (isNaN(tokenId)) {
-      alert("tokenId 輸入格式錯誤，必須為數字。");
+      alert("tokenId format error, must be a number.");
       return null;
     }
     var nft = this.NFTs[tokenId];
     if (!nft) {
-      alert("該 NFT 不存在。");
+      alert("NFT does not exist.");
       return null;
     }
     if (!this.stakeRecords[tokenId] || this.stakeRecords[tokenId].staker !== this.currentUser) {
-      alert("該 NFT 不處於您的質押狀態。");
+      alert("This NFT is not staked by you.");
       return null;
     }
-    // 解除質押後還原 NFT 擁有者為當前用戶
+    // Unstake NFT: return NFT ownership to the current user
     nft.owner = this.currentUser;
     var record = this.stakeRecords[tokenId];
     delete this.stakeRecords[tokenId];
-    // 銷毀對應的 FLP Token，即刪除 flpTokens 中的該條記錄
+    // Burn the corresponding FLP token (delete from flpTokens)
     delete this.flpTokens[tokenId];
-    return { tokenId: tokenId, msg: "解除質押成功", details: record };
+    return { tokenId: tokenId, msg: "Unstaking successful", details: record };
   },
 
   /**
-   * 返回所有 NFT 的對象
+   * Returns an object containing all NFTs.
    */
   getNFTs: function() {
     return this.NFTs;
   },
 
   /**
-   * 返回市場上架資訊
+   * Returns the current market listings.
    */
   getListings: function() {
     return this.listings;
   },
 
   /**
-   * 用戶賣出 NFT 給系統
-   * 如果當前用戶擁有該 NFT，則將 NFT 轉給系統，
-   * 並按照規則（定價 = rarity * 10）進行上架
+   * User sells an NFT to the system.
+   * If the current user owns the NFT, it transfers the NFT to the system and lists it with a price based on its preset basePrice.
+   * The sale amount is credited to the seller's account (simulated immediate payment).
    */
   sellNFT: function(tokenId) {
     var nft = this.NFTs[tokenId];
@@ -198,57 +198,57 @@ var FakeContract = {
     if (nft.owner !== this.currentUser) {
       return null;
     }
-    // 計算賣出價格，使用 NFT 事先計算好的 basePrice
+    // Calculate sale price using the NFT's preset basePrice
     var price = nft.basePrice;
-    // 將 NFT 轉移給系統
+    // Transfer NFT to the system
     nft.owner = "SYSTEM";
     this.listings[tokenId] = { price: price, seller: this.currentUser };
-    // 將賣出價格入賬給賣家（模擬賣給系統後立即收款）
+    // Credit the sale price to the seller's account (simulated immediate payment)
     this.users[this.currentUser].eth += price;
-    // 更新錢包顯示
+    // Update wallet display
     this.updateWalletDisplay();
     return { tokenId: tokenId, listingPrice: price };
   },
 
   /**
-   * 切換當前操作用戶
+   * Switches the current active user.
    */
   switchUser: function(user) {
     if (this.users[user]) {
       this.currentUser = user;
       var display = document.getElementById("currentUserDisplay");
       if (display) {
-        display.innerText = "當前用戶: " + user;
+        display.innerText = "Current User: " + user;
       }
       this.updateWalletDisplay();
     }
   },
 
   /**
-   * 初始化 demo 狀態：根據要求，為 Alice 與 Bob 分別鑄造特定 NFT 分佈
+   * Initialize the demo state by minting predefined NFTs for Alice and Bob.
    */
   initializeDemo: function() {
-    // 預設資料，共10個 NFT（同一系列）
+    // Default data: 10 NFTs (same series)
     var defaultNFTs = [
-      { user: "Alice", rarity: 80, type: "傳說" },
-      { user: "Alice", rarity: 15, type: "一般" },
-      { user: "Alice", rarity: 15, type: "一般" },
-      { user: "Alice", rarity: 15, type: "一般" },
-      { user: "Alice", rarity: 15, type: "一般" },
-      { user: "Bob", rarity: 30, type: "稀有" },
-      { user: "Bob", rarity: 30, type: "稀有" },
-      { user: "Bob", rarity: 60, type: "罕見" },
-      { user: "Bob", rarity: 60, type: "罕見" },
-      { user: "Bob", rarity: 15, type: "普通" }
+      { user: "Alice", rarity: 80, type: "Legendary" },
+      { user: "Alice", rarity: 15, type: "Common" },
+      { user: "Alice", rarity: 15, type: "Common" },
+      { user: "Alice", rarity: 15, type: "Common" },
+      { user: "Alice", rarity: 15, type: "Common" },
+      { user: "Bob", rarity: 30, type: "Rare" },
+      { user: "Bob", rarity: 30, type: "Rare" },
+      { user: "Bob", rarity: 60, type: "Uncommon" },
+      { user: "Bob", rarity: 60, type: "Uncommon" },
+      { user: "Bob", rarity: 15, type: "Ordinary" }
     ];
     for (var i = 0; i < defaultNFTs.length; i++) {
       var entry = defaultNFTs[i];
-      this.currentUser = entry.user; // 暫時設置用戶以模擬鑄造
+      this.currentUser = entry.user; // Temporarily set user to simulate minting
       var tokenId = this.nextTokenId++;
       var weight = entry.rarity * 100;
-      // 按比例計算 basePrice = (rarity / total稀有度) * 底價池
+      // Calculate basePrice: (rarity / total rarity sum) * basePricePool
       var basePrice = (entry.rarity / this.totalRaritySum) * this.basePricePool;
-      basePrice = Math.round(basePrice * 1000) / 1000; // 保留3位小數
+      basePrice = Math.round(basePrice * 1000) / 1000; // Keep 3 decimal places
       this.NFTs[tokenId] = {
         tokenId: tokenId,
         rarity: entry.rarity,
@@ -260,21 +260,21 @@ var FakeContract = {
         series: "Default"
       };
     }
-    // 鑄完 NFT 後，預設切回 Alice
+    // After minting NFTs, switch back to Alice by default
     this.currentUser = "Alice";
   },
 
   /**
-   * 新增：更新頁面上錢包餘額顯示
+   * Added: Update the wallet balance display on the page for the current user.
    */
   updateWalletDisplay: function() {
     var walletDisplay = document.getElementById("walletDisplay");
     if (walletDisplay) {
-      walletDisplay.innerText = "錢包餘額: " + this.users[this.currentUser].eth + " ETH";
+      walletDisplay.innerText = "Wallet Balance: " + this.users[this.currentUser].eth + " ETH";
     }
   },
 
-  // 新增：返回當前用戶的質押記錄
+  // Added: Return staking records for the current user.
   getStakeRecords: function() {
     var records = [];
     for (var tokenId in this.stakeRecords) {
@@ -286,11 +286,11 @@ var FakeContract = {
   },
 };
 
-// 頁面載入完成後設置相關 UI 控件
+// When the page loads, set up the related UI controls
 document.addEventListener("DOMContentLoaded", function() {
   var header = document.querySelector("header");
 
-  // 1. 新增用戶切換下拉選單
+  // 1. Add a dropdown for user switching.
   var userSelect = document.createElement("select");
   userSelect.id = "userSelect";
   var users = Object.keys(FakeContract.users);
@@ -305,38 +305,38 @@ document.addEventListener("DOMContentLoaded", function() {
   });
   header.appendChild(userSelect);
 
-  // 2. 顯示當前用戶
+  // 2. Display the current user.
   var currentUserDisplay = document.createElement("span");
   currentUserDisplay.id = "currentUserDisplay";
   currentUserDisplay.style.marginLeft = "20px";
-  currentUserDisplay.innerText = "當前用戶: " + FakeContract.currentUser;
+  currentUserDisplay.innerText = "Current User: " + FakeContract.currentUser;
   header.appendChild(currentUserDisplay);
 
-  // 3. 初始化 demo 狀態，為每個用戶鑄 3 個 NFT
+  // 3. Initialize demo state, minting 3 NFTs for each user.
   FakeContract.initializeDemo();
 
-  // 4. 在 NFT 鑄造與交易流程區塊額外新增「模擬賣出 NFT」按鈕
+  // 4. In the NFT minting and trading section, add a "Simulate Sell NFT" button.
   var nftProcess = document.getElementById("nft-process");
   if (nftProcess) {
     var sellBtn = document.createElement("button");
     sellBtn.id = "sell-btn";
-    sellBtn.innerText = "模擬賣出 NFT";
+    sellBtn.innerText = "Simulate Sell NFT";
     nftProcess.appendChild(sellBtn);
 
     sellBtn.addEventListener("click", function() {
-      // 提示用戶輸入欲賣出的 NFT tokenId
-      var tokenId = prompt("請輸入欲賣出的 NFT tokenId");
+      // Prompt the user to input the NFT tokenId to sell.
+      var tokenId = prompt("Please enter the NFT tokenId to sell");
       if (tokenId) {
         var result = FakeContract.sellNFT(tokenId);
         if (result) {
-          alert("NFT 已成功賣給系統並上架，TokenId: " +
-                tokenId + ", 定價: " + result.listingPrice);
-          // 重新渲染 NFT 市場
+          alert("NFT successfully sold to the system and listed, TokenId: " +
+                tokenId + ", Listing Price: " + result.listingPrice);
+          // Re-render the NFT market if the renderNFTs function is defined
           if (typeof renderNFTs === "function") {
             renderNFTs();
           }
         } else {
-          alert("賣出失敗，請確認 NFT tokenId 是否存在且屬於您。");
+          alert("Sale failed, please check if the NFT tokenId exists and belongs to you.");
         }
       }
     });
