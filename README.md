@@ -1,62 +1,59 @@
-# NFT-DEX
-# Gallery - 藝術價值永續的數位畫廊
+## Digital Gallery with Sustainable Artistic Value
 
-## 敘事：「永續價值的藝術品交易所」
+## Core Narrative: "Art Exchange with Sustainable Value"
 
-### 1. 畫廊理念：價值永續的藝術品
+### 1. Gallery Philosophy: Art with Sustainable Value
 
-就像實體畫廊，每件藝術品都應該有其基礎價值：
+Like physical galleries, each artwork should have its fundamental value:
 
-- **基礎價值保障**：類似實體藝術品的「底價收購&賣出」制度
-- **市場溢價空間**：保留藝術品的市場升值潛力
-- **價值緩衝機制**：90天緩衝期，避免價格斷崖式下跌
+- **Basic Value Guarantee**: Similar to physical art's "floor price buy & sell" system
+- **Market Premium Potential**: Preserving artwork's market appreciation potential
+- **Value Buffer Mechanism**: 90-day buffer period to prevent price cliff drops
 
-### 2. 創新交易模式：數位藝廊的煥新
+### 2. Innovative Trading Model: Digital Gallery Renewal
 
-將傳統畫廊經營模式搬上鏈：
+Bringing traditional gallery operations on-chain:
 
-- **雙池定價**：
-    - 基礎池 = 收購&賣出價(價格永久綁定)
-    - 溢價池 = 市場加價空間
-- **流動性保證**：隨時可以底價賣回給畫廊
-- **專業定價**：由部分鑄造NFT價格綁定藝術品基礎價值
+- **Dual Pool Pricing**:
+    - Base Pool = Buy & Sell price (permanently fixed)
+    - Premium Pool = Market premium space
+- **Liquidity Guarantee**: Can sell back to gallery at floor price anytime
+- **Professional Pricing**: Partial NFT minting price tied to artwork's base value
 
-### 3. 多元應用場景：藝術融入生活
+### 3. Diverse Application Scenarios: Art Integration into Life
 
-打造全方位的藝術品生態系統：
+Building a comprehensive art ecosystem:
 
-- **藝術票券**：
-    - 活動結束後轉為收藏品
-    - 保留基礎收藏價值
-    - 可用於周邊商品折扣
-- **實物藝術品代幣化**：
-    - 降低收藏門檻
-    - 提供部分所有權
-    - 確保真實價值支撐
-- **藝術品借貸**：
-    - 基於底價的借貸服務
-    - 無需額外抵押
-    - 降低清算風險
+- **Art Tickets**:
+    - Convert to collectibles after events
+    - Retain basic collection value
+    - Usable for merchandise discounts
+- **Physical Art Tokenization**:
+    - Lower collection barriers
+    - Provide partial ownership
+    - Ensure real value backing
+- **Art Lending**:
+    - Floor price-based lending services
+    - No additional collateral needed
+    - Reduced liquidation risk
 
-### 4. 收藏家權益
+### 4. Collector Benefits
 
-為收藏家提供全方位保障：
+Providing comprehensive protection for collectors:
 
-- **最低價值保證**：隨時可以底價賣回
-- **升值空間**：市場定價機制保留升值潛力
-- **流動性保障**：隨時可交易
-- **多元應用**：可用於借貸、權益證明等
+- **Minimum Value Guarantee**: Can sell back at floor price anytime
+- **Appreciation Potential**: Market pricing mechanism preserves growth potential
+- **Liquidity Guarantee**: Tradeable anytime
+- **Multiple Applications**: Usable for lending, proof of rights, etc.
 
-### 5. 願景：重新定義NFT交易
+### 5. Vision: Redefining NFT Trading
 
-- **從投機到收藏**：建立理性的藝術品市場
-- **從炒作到價值**：回歸藝術品本質
-- **從短期到永續**：建立長期發展的生態系統
+- **From Speculation to Collection**: Building a rational art market
+- **From Hype to Value**: Returning to art's essence
+- **From Short-term to Sustainable**: Building a long-term development ecosystem
 
-### 6. 獨特優勢
+### 6. Unique Advantages
 
-- **首創價值永續機制**：確保藝術品基礎價值
-- **專業定價模型**：結合算法與市場機制
-- **完整生態系統**：從創作、交易到應用的全方位支持
-
----
+- **Pioneer in Value Sustainability**: Ensuring artwork's base value
+- **Professional Pricing Model**: Combining algorithms with market mechanisms
+- **Complete Ecosystem**: Comprehensive support from creation to trading to application
