@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gallery</title>
+  <style>
+    /* Reset 和基本樣式 */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(-45deg, #1a1a1a, #2a2a2a, #1a1a1a, #2a2a2a);
+      background-size: 400% 400%;
+      animation: gradientAnimation 15s ease infinite;
+      color: #ddd;
+      padding: 20px;
+    }
+    header {
+      background-color: #222;
+      border-bottom: 1px solid #444;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 30px;
+    }
+    header h1 {
+      font-size: 24px;
+    }
+    nav ul {
+      list-style: none;
+      display: flex;
+      gap: 20px;
+    }
+    nav ul li a {
+      text-decoration: none;
+      color: #66b2b2;
+      font-weight: 500;
+    }
+    /* 錢包與模式切換區 */
+    #walletDisplay {
+      margin-bottom: 20px;
+      font-weight: bold;
+      color: #fff;
+    }
+    #mode-selection {
+      margin-bottom: 20px;
+    }
+    #mode-selection button {
+      padding: 8px 16px;
+      margin-right: 10px;
+      border: 1px solid #555;
+      border-radius: 4px;
+      background-color: #333;
+      color: #ddd;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    #mode-selection button:hover {
+      background-color: #444;
+    }
+    #currentModeDisplay {
+      margin-right: 20px;
+      font-weight: bold;
+    }
+    /* 確認操作按鈕 */
+    #confirm-action-btn {
+      padding: 8px 16px;
+      margin-top: 10px;
+      border: 1px solid #28a745;
+      border-radius: 4px;
+      background-color: #28a745;
+      color: #fff;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    #confirm-action-btn:hover {
+      background-color: #218838;
+    }
+    /* 帳戶概覽 */
+    #account-section { margin-bottom: 30px; }
+    #account-section h2 { margin-bottom: 10px; }
+    #account-section h3 { margin-top: 10px; }
+    .nft-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 20px;
+    }
+    .nft-item {
+      background-color: #333;
+      border: 1px solid #444;
+      border-radius: 8px;
+      overflow: hidden;
+      transition: transform 0.2s ease, opacity 0.5s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+      position: relative;
+      cursor: pointer;
+    }
+    .nft-item:hover {
+      transform: translateY(-5px);
+    }
+    .nft-item img {
+      width: 100%;
+      display: block;
+    }
+    .nft-info {
+      padding: 12px;
+    }
+    .nft-info h3 {
+      font-size: 18px;
+      margin-bottom: 8px;
+      color: #ddd;
+    }
+    .nft-info p {
+      font-size: 14px;
+      color: #bbb;
+    }
+    /* FLP 標識 */
+    .flp-label {
+      position: absolute;
+      top: 5px;
+      left: 5px;
+      background-color: #ff9800;
+      color: #fff;
+      padding: 2px 4px;
+      font-size: 12px;
+    }
+    /* 動畫效果 */
+    .fade-out { opacity: 0; }
+    .selected { outline: 3px solid #fff; }
+    /* 質押資訊展示 */
+    #staking-info p { margin: 5px 0; }
+    @keyframes gradientAnimation {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    /* 新增提示消息樣式 */
+    #message-box {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background-color: #444;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      z-index: 1000;
+    }
+    #message-box.show {
+      opacity: 1;
+    }
+    /* 資產橫向展示 */
+    #nft-section .nft-grid {
+      display: flex;
+      flex-direction: row;
+      overflow-x: auto;
+      gap: 20px;
+    }
+    /* 為每個 NFT 卡片設定固定寬度，防止單個項目過大 */
+    #nft-section .nft-grid .nft-item {
+      flex: 0 0 auto;
+      width: 200px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Gallery Demo</h1>
+    <nav>
+      <ul>
+        <li><a href="#">Items</a></li>
+      </ul>
+    </nav>
+    <!-- 用戶切換下拉選單由 simulatedBackend.js 自動加入 -->
+  </header>
+  <div id="walletDisplay">Wallet Balance: 0 ETH</div>
+  <div id="message-box"></div>
+  <div id="mode-selection">
+    <div id="view-selection" style="margin-top:10px;">
+      <span id="currentViewDisplay">Current View: 資產</span>
+      <button id="asset-view-btn">資產</button>
+      <button id="user-market-view-btn">用戶市場</button>
+      <button id="system-market-view-btn">系統市場</button>
+      <button id="staked-view-btn">質押中</button>
+    </div>
+  </div>
+  <div id="account-section">
+    <h2>帳戶概覽</h2>
+    <div id="nft-section">
+      <h3>持有 NFT</h3>
+      <div class="nft-grid" id="nft-grid">
+        <!-- NFT 卡片將在此生成，代表用戶持有的 NFT -->
+      </div>
+      <div id="asset-actions" style="margin: 10px 0; display: none;">
+        <button id="multi-sell-btn">多選確認賣出</button>
+        <button id="multi-stake-btn">多選確認質押</button>
+      </div>
+    </div>
+    <div id="flp-section">
+      <h3>持有 FLP</h3>
+      <div class="nft-grid" id="flp-grid">
+        <!-- FLP 卡片將在此生成，代表用戶質押後獲得的 FLP -->
+      </div>
+    </div>
+    <div id="staking-info">
+      <p>TVL: <span id="tvl">0</span> ETH</p>
+      <p>APY: <span id="apy">0</span>%</p>
+      <p>溢價: <span id="premium">0</span> ETH</p>
+    </div>
+  </div>
+  <main>
+    <!-- 主頁內容以帳戶概覽為主 -->
+  </main>
+  <!-- 引入模擬後端 JS 文件 -->
+  <script src="simulatedBackend.js" defer></script>
+  <script>
+    /* 在 <script> 區塊最開始位置新增全局變數 */
+    window.transactionOccurred = false;
+    window.txnCount = 0;
+
+    /***** 模擬初始化預設持有資料 *****/
+    function initializeDefaultHoldings() {
+      // 清空 NFT 資料
+      FakeContract.NFTs = {};
+      let tokenId = 1;
+      // 初始化兩個用戶：Alice 與 Bob
+      FakeContract.users = { 'Alice': { name: 'Alice', eth: 500 }, 'Bob': { name: 'Bob', eth: 500 } };
+      
+      // 根據需求設定三個系列，每個系列的總量分別為 10, 20, 30
+      // 分佈：系統市場持有全部50%，剩下的由Alice和Bob持有，其中Alice持有高平均稀有度（不含r80），Bob持有r80但平均較低
+      const defaultSeries = [
+        { series: 1, mintPrice: 0.02, total: 10, distribution: { 
+                'Alice': { r50: 1, r30: 1 },       // 2 個
+                'Bob': { r80: 1, r10: 2 },          // 3 個
+                'SYSTEM': { r30: 2, r10: 3 }        // 5 個
+            } },
+        { series: 2, mintPrice: 0.05, total: 20, distribution: { 
+                'Alice': { r50: 2, r30: 2 },       // 4 個
+                'Bob': { r80: 1, r10: 5 },          // 6 個
+                'SYSTEM': { r30: 4, r10: 6 }        // 10 個
+            } },
+        { series: 3, mintPrice: 0.03, total: 30, distribution: { 
+                'Alice': { r50: 3, r30: 3 },       // 6 個
+                'Bob': { r80: 1, r10: 8 },          // 9 個
+                'SYSTEM': { r30: 8, r10: 7 }        // 15 個
+            } }
+      ];
+      
+      // 清空 NFT 數據
+      FakeContract.NFTs = {};
+      
+      defaultSeries.forEach(item => {
+        const series = item.series;
+        const mintPrice = item.mintPrice;
+        const dist = item.distribution; // 各持有者的分配
+        for (let owner in dist) {
+          const ownersDist = dist[owner];
+          for (let rarityLabel in ownersDist) {
+            let count = ownersDist[rarityLabel];
+            let rarity = parseInt(rarityLabel.slice(1)); // 'r80' -> 80
+            for (let i = 0; i < count; i++) {
+              FakeContract.NFTs[tokenId] = {
+                tokenId: tokenId,
+                series: series,
+                rarity: rarity,
+                mintPrice: mintPrice,
+                owner: owner,
+                // 模擬鑄造時間 12 天以前
+                mintedAt: Date.now() - (12 * 24 * 3600 * 1000)
+              };
+              tokenId++;
+            }
+          }
+        }
+      });
+      FakeContract.nextTokenId = tokenId;
+    }
+    
+    /***** 全局變數及模式設定 *****/
+    // 更新 imageArray 定義
+    const imageArray = [
+      "https://www.okx.com/cdn/nft/files/bfc810f9-feab-49ca-8970-3992d5d77771.webp/type=detail",
+      "https://www.okx.com/cdn/nft/files/30a050bc-eb25-47ac-b5f8-ce74a64fb9be.webp/type=detail",
+      "https://www.okx.com/cdn/nft/files/6b0febbc-fef5-4485-8e88-a1c8348e4c64.webp/type=detail?x-oss-process=image/resize,w_784,type_6/ignore-error,1",
+      "https://www.okx.com/cdn/nft/files/9c6b34fc-0b20-459b-b491-c53b7e003222.webp/type=detail?x-oss-process=image/resize,w_784,type_6/ignore-error,1",
+      "https://www.okx.com/cdn/nft/files/4e19e410-d547-4a54-9079-e395ef7531e2.webp/type=detail?x-oss-process=image/resize,w_784,type_6/ignore-error,1",
+      "https://www.okx.com/cdn/nft/files/bb8cf570-4765-4658-bc4d-e23ca6010999.webp/type=detail?x-oss-process=image/resize,w_784,type_6/ignore-error,1",
+      "https://www.okx.com/cdn/nft/files/045504d3-a2a7-4b0f-9919-84a86cf5e71b.webp/type=detail?x-oss-process=image/resize,w_784,type_6/ignore-error,1",
+      "https://www.okx.com/cdn/nft/files/2328741f-e051-401b-9295-e239a6a1759c.webp/type=detail?x-oss-process=image/resize,w_784,type_6/ignore-error,1",
+      "https://www.okx.com/cdn/nft/files/e203638f-193a-4566-be65-9cec78cc38ca.webp/type=detail?x-oss-process=image/resize,w_784,type_6/ignore-error,1",
+      "https://www.okx.com/cdn/nft/files/2485bcf7-8ea6-4c60-abc9-5cf0419a343b.webp/type=detail?x-oss-process=image/resize,w_784,type_6/ignore-error,1",
+      "https://www.okx.com/cdn/nft/files/b5c8a006-8e5f-4eb5-99f4-9c3b0c970b3a.webp/type=detail?x-oss-process=image/resize,w_784,type_6/ignore-error,1",
+      "https://www.okx.com/cdn/nft/files/d035d509-d5b4-48f7-91f2-ec889766755f.webp/type=detail?x-oss-process=image/resize,w_784,type_6/ignore-error,1",
+      "https://www.okx.com/cdn/nft/files/f74ca146-d4aa-4ab9-8a25-1ce22b20f6fb.webp/type=detail?x-oss-process=image/resize,w_784,type_6/ignore-error,1",
+      "https://www.okx.com/cdn/nft/files/7cbd1540-395b-4acc-8be4-b8a3889ff9df.webp/type=detail?x-oss-process=image/resize,w_784,type_6/ignore-error,1"
+    ];
+    
+    // 在 const imageArray 定義之後新增 interestCoefficient 常數
+    const interestCoefficient = 0.05;
+    
+    // 全局模式變量，初始為 "buy"
+    let currentView = "asset"; // 新增，全局視圖變量，選項："asset", "userMarket", "systemMarket"
+    
+    function updateViewDisplay() {
+      document.getElementById('currentViewDisplay').innerText = "Current View:";
+      
+      // 更新多選操作按鈕根據不同視圖
+      const assetActions = document.getElementById('asset-actions');
+      if(assetActions) {
+        if(currentView === "asset") {
+          assetActions.style.display = 'block';
+          assetActions.innerHTML = '<button id="multi-sell-btn">多選確認賣出</button><button id="multi-stake-btn">多選確認質押</button>';
+          document.getElementById('multi-sell-btn').addEventListener('click', multiSellAction);
+          document.getElementById('multi-stake-btn').addEventListener('click', multiStakeAction);
+        } else if(currentView === "userMarket" || currentView === "systemMarket") {
+          assetActions.style.display = 'block';
+          assetActions.innerHTML = '<button id="multi-buy-btn">多選確認購買</button>';
+          document.getElementById('multi-buy-btn').addEventListener('click', multiBuyAction);
+        } else {
+          assetActions.style.display = 'none';
+        }
+      }
+    }
+    
+    // 新增視圖按鈕事件
+    document.getElementById('asset-view-btn').addEventListener('click', function() { currentView = "asset"; updateViewDisplay(); renderNFTs(); });
+    document.getElementById('user-market-view-btn').addEventListener('click', function() { currentView = "userMarket"; updateViewDisplay(); renderNFTs(); });
+    document.getElementById('system-market-view-btn').addEventListener('click', function() { currentView = "systemMarket"; updateViewDisplay(); renderNFTs(); });
+    document.getElementById('staked-view-btn').addEventListener('click', function() { currentView = "staked"; updateViewDisplay(); renderNFTs(); });
+    
+    // 修改渲染 NFT 卡片函數，依據 currentView 過濾 NFT
+    function renderNFTs() {
+      const nftGrid = document.getElementById('nft-grid');
+      nftGrid.innerHTML = '';
+      const nfts = FakeContract.getNFTs();
+      const groupedNFTs = {};
+      for (const key in nfts) {
+        if (nfts.hasOwnProperty(key)) {
+          const nft = nfts[key];
+          let show = false;
+          if (currentView === "asset") {
+            // 顯示用戶持有且未掛牌且未質押的 NFT
+            if (nft.owner === FakeContract.currentUser && (!FakeContract.listings.hasOwnProperty(nft.tokenId) || FakeContract.listings[nft.tokenId].listingType !== "user")) {
+              show = true;
+            }
+          } else if (currentView === "userMarket") {
+            if(FakeContract.listings[nft.tokenId] && FakeContract.listings[nft.tokenId].listingType === "user"){
+              show = true;
+            }
+          } else if (currentView === "systemMarket") {
+            if (nft.owner === "SYSTEM") {
+              show = true;
+            }
+          } else if (currentView === "staked") {
+            // 僅顯示當前用戶質押的 NFT
+            if (nft.owner === "STAKE" && FakeContract.stakeRecords[nft.tokenId] && FakeContract.stakeRecords[nft.tokenId].staker === FakeContract.currentUser) {
+              show = true;
+            }
+          }
+          if (show) {
+            const series = nft.series;
+            if (!groupedNFTs[series]) {
+              groupedNFTs[series] = [];
+            }
+            groupedNFTs[series].push(nft);
+          }
+        }
+      }
+      for (const series in groupedNFTs) {
+        const seriesContainer = document.createElement('div');
+        seriesContainer.className = 'nft-group';
+        const title = document.createElement('h2');
+        title.textContent = '系列 ' + series;
+        seriesContainer.appendChild(title);
+        const groupDiv = document.createElement('div');
+        groupDiv.className = 'nft-grid';
+        groupedNFTs[series].forEach(nft => {
+          const div = document.createElement('div');
+          div.className = 'nft-item';
+          div.setAttribute('data-tokenid', nft.tokenId);
+          const imgUrl = imageArray[ parseInt(nft.tokenId) % imageArray.length ];
+          const listing = FakeContract.listings[nft.tokenId];
+          const listingInfo = listing ? `<p>Price: ${listing.price} ETH</p>` : "";
+          const minPriceInfo = `<p>Min Price: ${nft.mintPrice !== undefined ? nft.mintPrice : 'N/A'} ETH</p>`;
+          const premiumInfo = `<p>Premium: ${listing && nft.mintPrice ? (listing.price - nft.mintPrice) : 0} ETH</p>`;
+          div.innerHTML = `
+            <img src="${imgUrl}" alt="NFT ${nft.tokenId}">
+            <div class="nft-info">
+              <h3>NFT #${nft.tokenId}</h3>
+              <p>Series: ${nft.series}</p>
+              <p>Type: ${nft.type ? nft.type : 'N/A'}</p>
+              <p>Rarity: ${nft.rarity}</p>
+              <p>Owner: ${nft.owner}</p>
+              ${minPriceInfo}
+              ${premiumInfo}
+              ${listingInfo}
+            </div>
+          `;
+          // 生成操作按鈕
+          div.innerHTML += (function(){
+            var actionsHtml = '';
+            if(currentView === "systemMarket"){
+              actionsHtml += '<button class="buy-btn" onclick="buyNFTAction(' + nft.tokenId + ')">確認購買</button>';
+            } else if(currentView === "userMarket"){
+              if(nft.owner === FakeContract.currentUser){
+                actionsHtml += '<button class="cancel-btn" onclick="cancelListingAction(' + nft.tokenId + ')">確認下架</button>';
+              } else {
+                actionsHtml += '<button class="buy-btn" onclick="buyNFTAction(' + nft.tokenId + ')">確認購買</button>';
+              }
+            } else if(currentView === "staked"){
+              actionsHtml += '<button class="unstake-btn" onclick="unstakeNFTAction(' + nft.tokenId + ')">解除質押</button>';
+            } else { // asset view
+              if(nft.owner === FakeContract.currentUser){
+                actionsHtml += '<button class="sell-btn" onclick="sellNFTAction(' + nft.tokenId + ')">確認賣出</button>';
+                actionsHtml += '<button class="sell-system-btn" onclick="systemSellNFTAction(' + nft.tokenId + ')">確認系統賣出</button>';
+                actionsHtml += '<button class="stake-btn" onclick="stakeNFTAction(' + nft.tokenId + ')">確認質押</button>';
+              } else {
+                actionsHtml += '<button class="buy-btn" onclick="buyNFTAction(' + nft.tokenId + ')">確認購買</button>';
+              }
+            }
+            return '<div class="nft-actions">' + actionsHtml + '</div>';
+          })();
+          div.addEventListener('click', function(e) {
+            div.classList.toggle('selected');
+          });
+          groupDiv.appendChild(div);
+        });
+        seriesContainer.appendChild(groupDiv);
+        nftGrid.appendChild(seriesContainer);
+      }
+    }
+    
+    // 修改 renderFLPs 函數，添加溢價顯示
+    function renderFLPs() {
+      console.log('renderFLPs executed');
+      const flpGrid = document.getElementById('flp-grid');
+      flpGrid.innerHTML = '';
+      let tokens = Object.values(FakeContract.flpTokens);
+      for (let token of tokens) {
+        const div = document.createElement('div');
+        div.className = 'nft-item';
+        div.setAttribute('data-tokenid', token.linkedNFT);
+        const imgUrl = imageArray[ parseInt(token.linkedNFT) % imageArray.length ];
+        const nft = FakeContract.getNFTs()[token.linkedNFT];
+        const weight = nft ? nft.rarity : 'N/A';
+        let basePrice = (nft.mintPrice !== undefined ? nft.mintPrice : 1);
+        // 使用全局快取的 APY 來計算當前動態價格
+        let APY = window.cachedAPY || 0;
+        let dynamicPrice = basePrice * (1 + APY / 100);
+        let interestFee = ((dynamicPrice - basePrice) * 0.8).toFixed(3);
+        let premiumValue = (dynamicPrice - basePrice).toFixed(3);
+        div.innerHTML = `<img src="${imgUrl}" alt="FLP for NFT ${token.linkedNFT}"><div class="nft-info"><h3>FLP #${token.linkedNFT}</h3><p>Owner: ${token.owner}</p><p>Weight: ${weight}</p><p>利息: ${interestFee} ETH</p><p>溢價: ${premiumValue} ETH</p></div>`;
+        if (token.owner === FakeContract.currentUser) {
+          const nftInfo = div.querySelector('.nft-info');
+          if (nftInfo) {
+            const unstakeBtn = document.createElement('button');
+            unstakeBtn.className = 'unstake-btn';
+            unstakeBtn.textContent = '解除質押';
+            unstakeBtn.onclick = function() { unstakeNFTAction(token.linkedNFT); };
+            nftInfo.appendChild(unstakeBtn);
+          }
+        }
+        const flpLabel = document.createElement('div');
+        flpLabel.className = 'flp-label';
+        flpLabel.innerText = 'FLP';
+        div.appendChild(flpLabel);
+        div.addEventListener('click', function(e) {
+          div.classList.toggle('selected');
+        });
+        flpGrid.appendChild(div);
+      }
+    }
+    
+    // 更新 updateStakeInfo 函数：使用含質押時間的權重計算：對每個質押的 NFT，計算其質押時間（以小時計），乘以 NFT 的稀有度
+    function updateStakeInfo(isUnstaking = false) {
+      // 計算 TVL：累計所有質押 FLP token 對應 NFT 的最低價格，若無設定則預設為 20 ETH
+      const stakedTokens = Object.values(FakeContract.flpTokens);
+      let TVL = 0;
+      for (let token of stakedTokens) {
+          const nft = FakeContract.getNFTs()[token.linkedNFT];
+          if (nft) {
+              let minPrice = nft.mintPrice !== undefined ? nft.mintPrice : 20;
+              TVL += parseFloat(minPrice);
+          }
+      }
+      
+      // 初始化全局快取 APY
+      if (!window.cachedAPY) {
+          window.cachedAPY = 0;
+      }
+      
+      if (!isUnstaking) {
+          // 假設獎勵池為 window.txnCount * 10 ETH
+          const rewardPool = window.txnCount * 10;
+          // 計算 APY 為 (rewardPool / TVL) * 100
+          let apy = TVL > 0 ? (rewardPool / TVL) * 100 : 0;
+          window.cachedAPY = apy;
+          document.getElementById('apy').innerText = apy.toFixed(2);
+      } else {
+          // 解除質押時，不變更 APY
+          document.getElementById('apy').innerText = window.cachedAPY.toFixed(2);
+      }
+      
+      // 更新 TVL 顯示
+      document.getElementById('tvl').innerText = TVL.toFixed(2);
+    }
+    
+    // 更新錢包餘額
+    function updateWallet() {
+      const walletDisplay = document.getElementById('walletDisplay');
+      walletDisplay.innerText = 'Wallet Balance: ' + FakeContract.users[FakeContract.currentUser].eth + ' ETH';
+      walletDisplay.style.backgroundColor = '#c8e6c9';
+      setTimeout(() => { walletDisplay.style.backgroundColor = ''; }, 500);
+    }
+    
+    // 輔助函數：添加淡出動畫並移除元素
+    function fadeOutAndRemove(element) {
+      element.classList.add('fade-out');
+      setTimeout(() => { element.remove(); }, 500);
+    }
+    
+    // 在確認操作按鈕事件處理中，將alert()全部替換為showMessage()提示
+    document.getElementById('confirm-action-btn').addEventListener('click', function() {
+      if (currentView === "buy") {
+        const selected = document.querySelectorAll('#nft-grid .nft-item.selected');
+        selected.forEach(card => {
+          const tokenId = card.getAttribute('data-tokenid');
+          const nft = FakeContract.getNFTs()[tokenId];
+          if (nft.owner !== FakeContract.currentUser) {
+            const listing = FakeContract.listings[tokenId];
+            const price = listing ? listing.price : 0;
+            const result = FakeContract.buyNFT(tokenId);
+            if (result) {
+              fadeOutAndRemove(card);
+              showMessage("NFT 購買成功，價格：" + price + " ETH", "success");
+            } else {
+              showMessage("NFT " + tokenId + " 購買失敗！", "error");
+            }
+          }
+        });
+        updateWallet();
+      } else if (currentView === "sell") {
+        const selected = document.querySelectorAll('#nft-grid .nft-item.selected');
+        if(selected.length === 0) return;
+        if(selected.length > 1) {
+          let useUniform = confirm("是否統一設定所有 NFT 的售價?");
+          if(useUniform) {
+            let inputPrice = prompt("請輸入統一的掛牌售價（ETH）：");
+            let price = parseFloat(inputPrice);
+            if(isNaN(price) || price <= 0) {
+              showMessage("價格輸入有誤", "error");
+              return;
+            }
+            selected.forEach(card => {
+              const tokenId = card.getAttribute('data-tokenid');
+              const nft = FakeContract.getNFTs()[tokenId];
+              if(nft.owner === FakeContract.currentUser) {
+                const result = FakeContract.listNFTForUserMarket(tokenId, price);
+                if(result){
+                  fadeOutAndRemove(card);
+                  showMessage("NFT " + tokenId + " 掛牌成功，售價：" + price + " ETH", "success");
+                } else {
+                  showMessage("NFT " + tokenId + " 掛牌失敗！", "error");
+                }
+              }
+            });
+          } else {
+            selected.forEach(card => {
+              const tokenId = card.getAttribute('data-tokenid');
+              const nft = FakeContract.getNFTs()[tokenId];
+              if(nft.owner === FakeContract.currentUser) {
+                let inputPrice = prompt("請輸入 NFT " + tokenId + " 的掛牌售價（ETH），若取消則賣給系統市場");
+                if(inputPrice !== null && inputPrice.trim() !== ""){
+                  let price = parseFloat(inputPrice);
+                  if(!isNaN(price) && price > 0){
+                    const result = FakeContract.listNFTForUserMarket(tokenId, price);
+                    if(result){
+                      fadeOutAndRemove(card);
+                      showMessage("NFT " + tokenId + " 掛牌成功，售價：" + price + " ETH", "success");
+                    } else {
+                      showMessage("NFT " + tokenId + " 掛牌失敗！", "error");
+                    }
+                  } else {
+                    const result = FakeContract.sellNFT(tokenId);
+                    if(result){
+                      // 移除錯誤的 fadeOutAndRemove(card) 調用，直接刷新介面
+                      showMessage('NFT ' + tokenId + ' 賣給系統市場成功，售價：' + result.listingPrice + ' ETH', 'success');
+                      renderNFTs();
+                      updateWallet();
+                    } else {
+                      showMessage('NFT ' + tokenId + ' 賣給系統市場失敗！', 'error');
+                    }
+                  }
+                } else {
+                  const result = FakeContract.sellNFT(tokenId);
+                  if(result){
+                    // 移除錯誤的 fadeOutAndRemove(card) 調用，直接刷新介面
+                    showMessage('NFT ' + tokenId + ' 賣給系統市場成功，售價：' + result.listingPrice + ' ETH', 'success');
+                    renderNFTs();
+                    updateWallet();
+                  } else {
+                    showMessage('NFT ' + tokenId + ' 賣給系統市場失敗！', 'error');
+                  }
+                }
+              }
+            });
+          }
+          updateWallet();
+        } else {
+          selected.forEach(card => {
+            const tokenId = card.getAttribute('data-tokenid');
+            const nft = FakeContract.getNFTs()[tokenId];
+            if(nft.owner === FakeContract.currentUser){
+              let inputPrice = prompt("請輸入掛牌出售的價格（ETH），若取消則賣給系統市場");
+              if(inputPrice !== null && inputPrice.trim() !== ""){
+                let price = parseFloat(inputPrice);
+                if(!isNaN(price) && price > 0){
+                  const result = FakeContract.listNFTForUserMarket(tokenId, price);
+                  if(result){
+                    fadeOutAndRemove(card);
+                    showMessage("NFT " + tokenId + " 掛牌成功，售價：" + price + " ETH", "success");
+                  } else {
+                    showMessage("NFT " + tokenId + " 掛牌失敗！", "error");
+                  }
+                } else {
+                  const result = FakeContract.sellNFT(tokenId);
+                  if(result){
+                    // 移除錯誤的 fadeOutAndRemove(card) 調用，直接刷新介面
+                    showMessage('NFT ' + tokenId + ' 賣給系統市場成功，售價：' + result.listingPrice + ' ETH', 'success');
+                    renderNFTs();
+                    updateWallet();
+                  } else {
+                    showMessage('NFT ' + tokenId + ' 賣給系統市場失敗！', 'error');
+                  }
+                }
+              } else {
+                const result = FakeContract.sellNFT(tokenId);
+                if(result){
+                  // 移除錯誤的 fadeOutAndRemove(card) 調用，直接刷新介面
+                  showMessage('NFT ' + tokenId + ' 賣給系統市場成功，售價：' + result.listingPrice + ' ETH', 'success');
+                  renderNFTs();
+                  updateWallet();
+                } else {
+                  showMessage('NFT ' + tokenId + ' 賣給系統市場失敗！', 'error');
+                }
+              }
+            }
+          });
+          updateWallet();
+        }
+      } else if (currentView === "sellToSystem") {
+          const selected = document.querySelectorAll('#nft-grid .nft-item.selected');
+          selected.forEach(card => {
+              const tokenId = card.getAttribute('data-tokenid');
+              const nft = FakeContract.getNFTs()[tokenId];
+              if(nft.owner === FakeContract.currentUser){
+                  const result = FakeContract.sellNFT(tokenId);
+                  if(result){
+                      fadeOutAndRemove(card);
+                      showMessage("NFT " + tokenId + " 賣給系統市場成功，售價：" + result.listingPrice + " ETH", "success");
+                  } else {
+                      showMessage("NFT " + tokenId + " 賣給系統市場失敗！", "error");
+                  }
+              }
+          });
+          updateWallet();
+      } else if (currentView === "stake") {
+        const selected = document.querySelectorAll('#nft-grid .nft-item.selected');
+        selected.forEach(card => {
+          const tokenId = card.getAttribute('data-tokenid');
+          const nft = FakeContract.getNFTs()[tokenId];
+          if (nft.owner === FakeContract.currentUser) {
+            let reward = nft.rarity;
+            if(confirm("確定質押 NFT #" + tokenId + " 嗎？\n質押後你將獲得 FLP token，獎勵金額：" + reward + "（基於稀有度計算）")){
+              const result = FakeContract.stakeNFT(tokenId);
+              if (result) {
+                const flpCard = card.cloneNode(true);
+                const flpLabel = document.createElement('div');
+                flpLabel.className = 'flp-label';
+                flpLabel.innerText = 'FLP';
+                flpCard.appendChild(flpLabel);
+                fadeOutAndRemove(card);
+                document.getElementById('flp-grid').appendChild(flpCard);
+                showMessage("NFT " + tokenId + " 質押成功，獲得 FLP token，獎勵：" + reward, "success");
+              } else {
+                showMessage("質押 NFT " + tokenId + " 失敗！", "error");
+              }
+            }
+          }
+        });
+        updateWallet();
+        updateStakeInfo();
+      } else if (currentView === "unstake") {
+        const selected = document.querySelectorAll('#flp-grid .nft-item.selected');
+        selected.forEach(card => {
+          const tokenId = card.getAttribute('data-tokenid');
+          if (confirm('解除質押 NFT #' + tokenId + '？')) {
+            const result = FakeContract.unstakeNFT(tokenId);
+            if (result) {
+              let basePrice = (nft.mintPrice !== undefined ? nft.mintPrice : 1);
+              let dynamicPrice = (nft.lastTransactionPrice !== undefined ? nft.lastTransactionPrice : ((FakeContract.listings[tokenId] && FakeContract.listings[tokenId].price) ? FakeContract.listings[tokenId].price : (basePrice * 1.1)));
+              var profit = ((dynamicPrice - basePrice) * 0.8);
+              FakeContract.users[FakeContract.currentUser].eth += profit;
+              window.transactionOccurred = true;
+              showMessage('解除質押 NFT ' + tokenId + ' 成功，獲取收益：' + profit.toFixed(3) + ' ETH', 'success');
+              renderNFTs();
+              renderFLPs();
+              updateWallet();
+              updateStakeInfo(true);
+            } else {
+              showMessage('解除質押 NFT ' + tokenId + ' 失敗！', 'error');
+            }
+          }
+        });
+        renderNFTs();
+        updateWallet();
+        updateStakeInfo();
+      }
+    });
+    
+    // 在<script>區塊最開始位置，模擬初始化函數之前，新增自定義提示函數
+    function showMessage(message, type) {
+      const box = document.getElementById('message-box');
+      if (!box) return;
+      box.innerText = message;
+      if(type === 'success') {
+        box.style.backgroundColor = '#28a745';
+      } else if(type === 'error') {
+        box.style.backgroundColor = '#dc3545';
+      } else {
+        box.style.backgroundColor = '#444';
+      }
+      box.classList.add('show');
+      setTimeout(() => { box.classList.remove('show'); }, 3000);
+    }
+    
+    // 初始渲染：先初始化預設持有資料，再渲染各模塊
+    document.addEventListener('DOMContentLoaded', function() {
+      initializeDefaultHoldings();
+      renderNFTs();
+      renderFLPs();
+      updateWallet();
+      updateStakeInfo();
+      updateViewDisplay();
+      // 新增多選操作按鈕的事件綁定
+      document.getElementById('multi-sell-btn').addEventListener('click', multiSellAction);
+      document.getElementById('multi-stake-btn').addEventListener('click', multiStakeAction);
+    });
+
+    // 修改 buyNFTAction 函數定義
+    function buyNFTAction(tokenId) {
+      var nft = FakeContract.getNFTs()[tokenId];
+      var listing = FakeContract.listings[tokenId];
+      // 若有掛牌則以掛牌價格為基礎，否則以最低價格（mintPrice）為基礎
+      var basePrice = (listing && listing.price) ? listing.price : nft.mintPrice;
+      var fee = basePrice * 0.03; // 3% 手續費
+      var effectivePrice = basePrice + fee;
+      if(FakeContract.users[FakeContract.currentUser].eth < effectivePrice) {
+        showMessage('餘額不足，需支付 ' + effectivePrice.toFixed(3) + ' ETH (含手續費)', 'error');
+        return;
+      }
+      // 扣除手續費
+      FakeContract.users[FakeContract.currentUser].eth -= fee;
+      var result = FakeContract.buyNFT(tokenId);
+      if(result) {
+        // 2% 分配給利息池
+        window.interestPool = (window.interestPool || 0) + (basePrice * 0.02);
+        window.transactionOccurred = true;
+        window.txnCount++;
+        showMessage('NFT ' + tokenId + ' 購買成功，價格：' + basePrice.toFixed(3) + ' ETH，手續費：' + fee.toFixed(3) + ' ETH', 'success');
+        renderNFTs();
+        updateWallet();
+        updateStakeInfo();
+        renderFLPs();
+      } else {
+        // 退回手續費
+        FakeContract.users[FakeContract.currentUser].eth += fee;
+        showMessage('NFT ' + tokenId + ' 購買失敗！', 'error');
+      }
+    }
+
+    function sellNFTAction(tokenId) {
+      var inputPrice = prompt('請輸入 NFT ' + tokenId + ' 的掛牌售價（ETH）：');
+      if(inputPrice !== null && inputPrice.trim() !== ''){
+        var price = parseFloat(inputPrice);
+        if(!isNaN(price) && price > 0){
+          var result = FakeContract.listNFTForUserMarket(tokenId, price);
+          if(result){
+            showMessage('NFT ' + tokenId + ' 掛牌成功，售價：' + price + ' ETH', 'success');
+            renderNFTs();
+            updateWallet();
+          } else {
+            showMessage('NFT ' + tokenId + ' 掛牌失敗！', 'error');
+          }
+        } else {
+          showMessage('價格輸入有誤', 'error');
+        }
+      }
+    }
+
+    function stakeNFTAction(tokenId) {
+      var nft = FakeContract.getNFTs()[tokenId];
+      if(nft.owner === "SYSTEM"){
+        showMessage("系統商品不能質押", "error");
+        return;
+      }
+      var fee = nft.rarity * 0.01;
+      if(confirm('質押 NFT #' + tokenId + '，將扣除 ' + fee + ' ETH 作為質押費用，確定嗎？')){
+        if(FakeContract.users[FakeContract.currentUser].eth < fee) {
+          showMessage('餘額不足以支付質押費用', 'error');
+          return;
+        }
+        FakeContract.users[FakeContract.currentUser].eth -= fee;
+        var result = FakeContract.stakeNFT(tokenId);
+        if(result){
+          FakeContract.stakeRecords = FakeContract.stakeRecords || {};
+          // 在 stakeRecords 中加入 stakePrice，記錄質押時的底價
+          FakeContract.stakeRecords[tokenId] = { staker: FakeContract.currentUser, stakeAmount: fee, stakeTime: Date.now(), stakePrice: nft.basePrice };
+          window.transactionOccurred = true;
+          window.txnCount++;
+          showMessage('NFT ' + tokenId + ' 質押成功，扣除費用：' + fee + ' ETH', 'success');
+          renderNFTs();
+          renderFLPs();
+          updateWallet();
+          updateStakeInfo();
+        } else {
+          showMessage('質押 NFT 失敗！', 'error');
+        }
+      }
+    }
+
+    // 修改 unstakeNFTAction 函數
+    function unstakeNFTAction(tokenId) {
+      console.log('unstakeNFTAction executed for tokenId', tokenId);
+      var nft = FakeContract.getNFTs()[tokenId];
+      // 取得該 NFT 的質押記錄
+      var stakeRecord = (FakeContract.stakeRecords && FakeContract.stakeRecords[tokenId]) || null;
+      if (!stakeRecord) {
+        showMessage('無法找到質押記錄', 'error');
+        return;
+      }
+      // 定義 sellPrice：若有 lastTransactionPrice 則採用，否則使用當前底價
+      var sellPrice = (nft.lastTransactionPrice !== undefined ? nft.lastTransactionPrice : nft.basePrice);
+      // 利用全局 interestCoefficient 進行收益計算
+      let estimatedProfit = ((sellPrice - stakeRecord.stakePrice) * interestCoefficient).toFixed(3);
+      if (confirm('解除質押 NFT #' + tokenId + '？ 預計收益：' + estimatedProfit + ' ETH')) {
+        var result = FakeContract.unstakeNFT(tokenId);
+        if (result) {
+          var profit = (sellPrice - stakeRecord.stakePrice) * interestCoefficient;
+          FakeContract.users[FakeContract.currentUser].eth += profit;
+          window.transactionOccurred = true;
+          showMessage('解除質押 NFT ' + tokenId + ' 成功，獲取收益：' + profit.toFixed(3) + ' ETH', 'success');
+          renderNFTs();
+          renderFLPs();
+          updateWallet();
+          updateStakeInfo(true);
+        } else {
+          showMessage('解除質押 NFT ' + tokenId + ' 失敗！', 'error');
+        }
+      }
+    }
+
+    // 可選：隱藏全局 confirm 操作按鈕，因為已用獨立按鈕進行買賣操作
+    var globalConfirmBtn = document.getElementById('confirm-action-btn');
+    if(globalConfirmBtn) { globalConfirmBtn.style.display = 'none'; }
+
+    // 在 <script> 區塊末尾新增全局函數 cancelListingAction
+    function cancelListingAction(tokenId) {
+      if(FakeContract.listings[tokenId] && FakeContract.listings[tokenId].seller === FakeContract.currentUser){
+        delete FakeContract.listings[tokenId];
+        showMessage('NFT ' + tokenId + ' 下架成功', 'success');
+        renderNFTs();
+      } else {
+        showMessage('取消下架失敗', 'error');
+      }
+    }
+
+    // 在 <script> 區塊末尾新增全局函數 systemSellNFTAction
+    function systemSellNFTAction(tokenId) {
+      var nft = FakeContract.getNFTs()[tokenId];
+      if(nft.owner === FakeContract.currentUser) {
+        var result = FakeContract.sellNFT(tokenId);
+        if(result){
+          showMessage("NFT " + tokenId + " 賣給系統市場成功，售價：" + result.listingPrice + " ETH", "success");
+          renderNFTs();
+          updateWallet();
+        } else {
+          showMessage("NFT " + tokenId + " 賣給系統市場失敗！", "error");
+        }
+      }
+    }
+
+    // 修改 userSelect 事件
+    var userSelect = document.getElementById('userSelect');
+    if(userSelect){
+      userSelect.addEventListener('change', function() {
+        // 加入延時，確保使用者切換後數據刷新
+        setTimeout(function(){
+          renderNFTs();
+          renderFLPs();
+          updateWallet();
+          updateStakeInfo();
+        }, 1000);
+      });
+    }
+
+    // 新增多選操作的全局函數
+    function multiSellAction() {
+      const selected = document.querySelectorAll('#nft-grid .nft-item.selected');
+      if(selected.length === 0) {
+        showMessage('請先選取 NFT', 'error');
+        return;
+      }
+      let sellToSystem = confirm("是否賣給系統市場？(確定表示賣給系統，取消則掛牌於用戶市場)");
+      if(sellToSystem){
+        selected.forEach(card => {
+          const tokenId = card.getAttribute('data-tokenid');
+          const nft = FakeContract.getNFTs()[tokenId];
+          if(nft.owner === FakeContract.currentUser) {
+            const result = FakeContract.sellNFT(tokenId);
+            if(result){
+              showMessage("NFT " + tokenId + " 賣給系統市場成功，售價：" + result.listingPrice + " ETH", "success");
+            } else {
+              showMessage("NFT " + tokenId + " 賣給系統市場失敗！", "error");
+            }
+          }
+        });
+      } else {
+        let inputPrice = prompt("請輸入統一的掛牌售價（ETH）：");
+        let price = parseFloat(inputPrice);
+        if(isNaN(price) || price <= 0) {
+          showMessage('價格輸入有誤', 'error');
+          return;
+        }
+        selected.forEach(card => {
+          const tokenId = card.getAttribute('data-tokenid');
+          const nft = FakeContract.getNFTs()[tokenId];
+          if(nft.owner === FakeContract.currentUser) {
+            const result = FakeContract.listNFTForUserMarket(tokenId, price);
+            if(result) {
+              showMessage('NFT ' + tokenId + ' 掛牌成功，售價：' + price + ' ETH', 'success');
+            } else {
+              showMessage('NFT ' + tokenId + ' 掛牌失敗！', 'error');
+            }
+          }
+        });
+      }
+      renderNFTs();
+      updateWallet();
+    }
+
+    function multiStakeAction() {
+      console.log('multiStakeAction triggered, selected:', document.querySelectorAll('#nft-grid .nft-item.selected').length);
+      const selected = document.querySelectorAll('#nft-grid .nft-item.selected');
+      if(selected.length === 0) {
+        showMessage('請先選取 NFT', 'error');
+        return;
+      }
+      if(!confirm('確定要質押選中的所有 NFT 嗎？每個 NFT 將扣除相應質押費用')) {
+        return;
+      }
+      selected.forEach(card => {
+        const tokenId = card.getAttribute('data-tokenid');
+        const nft = FakeContract.getNFTs()[tokenId];
+        if(nft.owner === "SYSTEM"){
+          showMessage("系統商品不能質押", "error");
+          return;
+        }
+        if(nft.owner === FakeContract.currentUser) {
+          const fee = nft.rarity * 0.01;
+          if(FakeContract.users[FakeContract.currentUser].eth < fee) {
+            showMessage('NFT ' + tokenId + ' 質押失敗：餘額不足', 'error');
+          } else {
+            FakeContract.users[FakeContract.currentUser].eth -= fee;
+            const result = FakeContract.stakeNFT(tokenId);
+            if(result) {
+              showMessage('NFT ' + tokenId + ' 質押成功，扣除費用：' + fee + ' ETH', 'success');
+            } else {
+              showMessage('NFT ' + tokenId + ' 質押失敗！', 'error');
+            }
+          }
+        }
+      });
+      renderNFTs();
+      renderFLPs();
+      updateWallet();
+      updateStakeInfo();
+    }
+
+    // 新增多選購買函數 multiBuyAction
+    function multiBuyAction() {
+      const selected = document.querySelectorAll('#nft-grid .nft-item.selected');
+      if(selected.length === 0) {
+        showMessage('請先選取 NFT', 'error');
+        return;
+      }
+      selected.forEach(card => {
+        const tokenId = card.getAttribute('data-tokenid');
+        buyNFTAction(tokenId);
+      });
+      renderNFTs();
+      updateWallet();
+    }
+
+    // 在現有的 userSelect 事件監聽器之後，新增如下全局監聽器
+
+    document.addEventListener('change', function(e) {
+      if(e.target && e.target.id === 'userSelect') {
+        // 加入延時，確保切換用戶後 UI 數據刷新
+        setTimeout(function(){
+          renderNFTs();
+          renderFLPs();
+          updateWallet();
+          updateStakeInfo();
+        }, 1000);
+      }
+    });
+  </script>
+</body>
+</html>
