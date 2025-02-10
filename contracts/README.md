@@ -1,1 +1,0 @@
-Contracts source code for the project.
